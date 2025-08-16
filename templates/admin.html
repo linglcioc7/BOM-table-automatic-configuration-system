@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOM系统管理 - 配方管理</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .admin-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 40px 0;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+        }
+        .table-responsive {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .recipe-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #28a745;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        .modal-xl {
+            max-width: 90%;
+        }
+    </style>
+</head>
+<body>
+    <div class="header text-center">
+        <div class="container">
+            <h1><i class="bi bi-gear"></i> BOM系统管理</h1>
+            <p class="lead">配方信息维护</p>
+            <a href="/" class="btn btn-outline-light">
+                <i class="bi bi-arrow-left"></i> 返回主页
+            </a>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 配方管理操作栏 -->
+        <div class="admin-container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h3><i class="bi bi-plus-circle"></i> 配方管理</h3>
+                </div>
+                <div class="col-md-6 text-end">
+                    <button class="btn btn-primary me-2" onclick="showAddRecipeModal()">
+                        <i class="bi bi-plus"></i> 添加配方
+                    </button>
+                    <button class="btn btn-success me-2" onclick="downloadTemplate()">
+                        <i class="bi bi-download"></i> 下载模板
+                    </button>
+                    <button class="btn btn-warning me-2" onclick="exportAllRecipes()">
+                        <i class="bi bi-file-earmark-excel"></i> 批量导出
+                    </button>
+                    <button class="btn btn-info" onclick="showImportModal()">
+                        <i class="bi bi-upload"></i> 导入配方
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 现有配方列表 -->
+        <div class="admin-container">
+            <h3><i class="bi bi-list-ul"></i> 现有配方</h3>
+            <div id="existingRecipes"></div>
+        </div>
+    </div>
+
+    <!-- 添加/编辑配方模态框 -->
+    <div class="modal fade" id="recipeModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="recipeModalTitle">添加新配方</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="recipeForm">
+                        <input type="hidden" id="recipe_id" value="">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="recipe_name" class="form-label">配方名称 *</label>
+                                    <input type="text" class="form-control" id="recipe_name" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="recipe_description" class="form-label">配方描述</label>
+                                    <input type="text" class="form-control" id="recipe_description">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">配方项目</label>
+                            <div id="recipeItems">
+                                <div class="recipe-item">
+                                    <div class="row">
+                                        <div class="col-md-2">
+                                            <label class="form-label">行号</label>
+                                            <input type="text" class="form-control recipe-line" value="0010" pattern="[0-9]{4}" placeholder="0010">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">物料编码</label>
+                                            <input type="text" class="form-control recipe-material-code" required>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">物料名称</label>
+                                            <input type="text" class="form-control recipe-material-name" required>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">数量</label>
+                                            <input type="number" class="form-control recipe-quantity" step="0.001" required>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">单位</label>
+                                            <select class="form-control recipe-unit">
+                                                <option value="PCS">PCS</option>
+                                                <option value="KG">KG</option>
+                                                <option value="M">M</option>
+                                                <option value="L">L</option>
+                                                <option value="M2">M²</option>
+                                                <option value="M3">M³</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-1">
+                                            <label class="form-label">类别</label>
+                                            <select class="form-control recipe-category">
+                                                <option value="L">L</option>
+                                                <option value="N">N</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-danger mt-2 remove-item">
+                                        <i class="bi bi-trash"></i> 删除
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary" id="addRecipeItem">
+                                <i class="bi bi-plus"></i> 添加配方项
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-success" onclick="saveRecipe()">
+                        <i class="bi bi-save"></i> 保存配方
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导入配方模态框 -->
+    <div class="modal fade" id="importModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">导入配方</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="importForm" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="import_file" class="form-label">选择Excel文件 *</label>
+                            <input type="file" class="form-control" id="import_file" accept=".xlsx,.xls" required>
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> 
+                            <strong>多配方导入说明：</strong><br>
+                            1. 请先下载模板文件，按照模板格式填写数据<br>
+                            2. 模板包含两个工作表："配方数据"和"使用说明"<br>
+                            3. 在"配方数据"工作表中填写配方信息<br>
+                            4. 配方名称相同的行将被识别为同一个配方<br>
+                            5. 每个配方可以有多个配方项（多行数据）<br>
+                            6. 支持的行号格式：0010、0020、0030...<br>
+                            7. 支持的类别：L(固定值)或N(虚拟件)<br>
+                            8. <strong>可以一次性导入多个配方！</strong><br>
+                            9. 详细说明请查看"使用说明"工作表
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-success" onclick="importRecipe()">
+                        <i class="bi bi-upload"></i> 导入
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let recipeItemCounter = 1;
+        let currentRecipeId = null;
+        let recipeModal = null;
+        let importModal = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadExistingRecipes();
+            setupEventListeners();
+            
+            // 初始化模态框
+            recipeModal = new bootstrap.Modal(document.getElementById('recipeModal'));
+            importModal = new bootstrap.Modal(document.getElementById('importModal'));
+        });
+
+        function setupEventListeners() {
+            // 添加配方项
+            document.getElementById('addRecipeItem').addEventListener('click', function() {
+                addRecipeItem();
+            });
+
+            // 删除配方项
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-item')) {
+                    e.target.closest('.recipe-item').remove();
+                }
+            });
+        }
+
+        function showAddRecipeModal() {
+            currentRecipeId = null;
+            document.getElementById('recipeModalTitle').textContent = '添加新配方';
+            document.getElementById('recipeForm').reset();
+            document.getElementById('recipe_id').value = '';
+            
+            // 重置配方项
+            document.getElementById('recipeItems').innerHTML = '';
+            addRecipeItem();
+            
+            recipeModal.show();
+        }
+
+        function showEditRecipeModal(recipeId) {
+            currentRecipeId = recipeId;
+            document.getElementById('recipeModalTitle').textContent = '编辑配方';
+            
+            // 加载配方数据
+            fetch(`/api/recipe/${recipeId}`)
+                .then(response => response.json())
+                .then(items => {
+                    // 加载配方基本信息
+                    fetch('/api/recipes')
+                        .then(response => response.json())
+                        .then(recipes => {
+                            const recipe = recipes.find(r => r.id == recipeId);
+                            if (recipe) {
+                                document.getElementById('recipe_name').value = recipe.name;
+                                document.getElementById('recipe_description').value = recipe.description || '';
+                            }
+                        });
+                    
+                    // 重置配方项
+                    document.getElementById('recipeItems').innerHTML = '';
+                    
+                    // 添加配方项
+                    items.forEach(item => {
+                        addRecipeItem(item);
+                    });
+                    
+                    recipeModal.show();
+                })
+                .catch(error => console.error('加载配方失败:', error));
+        }
+
+        function showImportModal() {
+            importModal.show();
+        }
+
+        function addRecipeItem(itemData = null) {
+            recipeItemCounter++;
+            const lineNumber = itemData ? itemData.line_number : String(recipeItemCounter * 10).padStart(4, '0');
+            
+            const newItem = document.createElement('div');
+            newItem.className = 'recipe-item';
+            newItem.innerHTML = `
+                <div class="row">
+                    <div class="col-md-2">
+                        <label class="form-label">行号</label>
+                        <input type="text" class="form-control recipe-line" value="${lineNumber}" pattern="[0-9]{4}" placeholder="0010">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">物料编码</label>
+                        <input type="text" class="form-control recipe-material-code" value="${itemData ? itemData.material_code : ''}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">物料名称</label>
+                        <input type="text" class="form-control recipe-material-name" value="${itemData ? itemData.material_name : ''}" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">数量</label>
+                        <input type="number" class="form-control recipe-quantity" step="0.001" value="${itemData ? itemData.quantity : ''}" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">单位</label>
+                        <select class="form-control recipe-unit">
+                            <option value="PCS" ${itemData && itemData.unit === 'PCS' ? 'selected' : ''}>PCS</option>
+                            <option value="KG" ${itemData && itemData.unit === 'KG' ? 'selected' : ''}>KG</option>
+                            <option value="M" ${itemData && itemData.unit === 'M' ? 'selected' : ''}>M</option>
+                            <option value="L" ${itemData && itemData.unit === 'L' ? 'selected' : ''}>L</option>
+                            <option value="M2" ${itemData && itemData.unit === 'M2' ? 'selected' : ''}>M²</option>
+                            <option value="M3" ${itemData && itemData.unit === 'M3' ? 'selected' : ''}>M³</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">类别</label>
+                        <select class="form-control recipe-category">
+                            <option value="L" ${itemData && itemData.project_category === 'L' ? 'selected' : ''}>L</option>
+                            <option value="N" ${itemData && itemData.project_category === 'N' ? 'selected' : ''}>N</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-danger mt-2 remove-item">
+                    <i class="bi bi-trash"></i> 删除
+                </button>
+            `;
+            
+            document.getElementById('recipeItems').appendChild(newItem);
+        }
+
+        function saveRecipe() {
+            const recipeData = {
+                name: document.getElementById('recipe_name').value,
+                description: document.getElementById('recipe_description').value,
+                items: []
+            };
+
+            // 收集配方项数据
+            const items = document.querySelectorAll('.recipe-item');
+            items.forEach(item => {
+                recipeData.items.push({
+                    line_number: item.querySelector('.recipe-line').value,
+                    material_code: item.querySelector('.recipe-material-code').value,
+                    material_name: item.querySelector('.recipe-material-name').value,
+                    quantity: parseFloat(item.querySelector('.recipe-quantity').value),
+                    unit: item.querySelector('.recipe-unit').value,
+                    project_category: item.querySelector('.recipe-category').value
+                });
+            });
+
+            const url = currentRecipeId ? `/api/recipe/${currentRecipeId}` : '/api/recipe';
+            const method = currentRecipeId ? 'PUT' : 'POST';
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(recipeData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(currentRecipeId ? '配方更新成功！' : '配方保存成功！', 'success');
+                    recipeModal.hide();
+                    loadExistingRecipes();
+                } else {
+                    showAlert('保存失败：' + data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('保存配方失败:', error);
+                showAlert('保存失败，请检查网络连接', 'danger');
+            });
+        }
+
+        function deleteRecipe(recipeId) {
+            if (confirm('确定要删除这个配方吗？删除后无法恢复。')) {
+                fetch(`/api/recipe/${recipeId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('配方删除成功！', 'success');
+                        loadExistingRecipes();
+                    } else {
+                        showAlert('删除失败：' + data.message, 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('删除配方失败:', error);
+                    showAlert('删除失败，请检查网络连接', 'danger');
+                });
+            }
+        }
+
+        function downloadTemplate() {
+            window.location.href = '/api/recipe/template';
+        }
+
+        function importRecipe() {
+            const formData = new FormData();
+            const file = document.getElementById('import_file').files[0];
+
+            if (!file) {
+                showAlert('请选择要导入的Excel文件', 'warning');
+                return;
+            }
+
+            formData.append('file', file);
+
+            fetch('/api/recipe/import', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    importModal.hide();
+                    document.getElementById('importForm').reset();
+                    loadExistingRecipes();
+                } else {
+                    showAlert('导入失败：' + data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('导入配方失败:', error);
+                showAlert('导入失败，请检查网络连接', 'danger');
+            });
+        }
+
+        function exportRecipe(recipeId) {
+            window.location.href = `/api/recipe/export/${recipeId}`;
+        }
+
+        function loadExistingRecipes() {
+            fetch('/api/recipes')
+                .then(response => response.json())
+                .then(recipes => {
+                    const container = document.getElementById('existingRecipes');
+                    if (recipes.length === 0) {
+                        container.innerHTML = '<p class="text-muted">暂无配方数据</p>';
+                        return;
+                    }
+
+                    let html = '<div class="table-responsive"><table class="table table-striped">';
+                    html += '<thead><tr><th>配方名称</th><th>描述</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead><tbody>';
+                    
+                    recipes.forEach(recipe => {
+                        html += `<tr>
+                            <td>${recipe.name}</td>
+                            <td>${recipe.description || ''}</td>
+                            <td>${recipe.created_at}</td>
+                            <td>${recipe.updated_at}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn btn-sm btn-info" onclick="viewRecipe(${recipe.id})">
+                                        <i class="bi bi-eye"></i> 查看
+                                    </button>
+                                    <button class="btn btn-sm btn-warning" onclick="showEditRecipeModal(${recipe.id})">
+                                        <i class="bi bi-pencil"></i> 编辑
+                                    </button>
+                                    <button class="btn btn-sm btn-success" onclick="exportRecipe(${recipe.id})">
+                                        <i class="bi bi-download"></i> 导出
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteRecipe(${recipe.id})">
+                                        <i class="bi bi-trash"></i> 删除
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>`;
+                    });
+                    
+                    html += '</tbody></table></div>';
+                    container.innerHTML = html;
+                })
+                .catch(error => console.error('加载配方失败:', error));
+        }
+
+        function viewRecipe(recipeId) {
+            fetch(`/api/recipe/${recipeId}`)
+                .then(response => response.json())
+                .then(items => {
+                    let html = '<div class="table-responsive"><table class="table table-sm">';
+                    html += '<thead><tr><th>行号</th><th>物料编码</th><th>物料名称</th><th>数量</th><th>单位</th><th>类别</th></tr></thead><tbody>';
+                    
+                    items.forEach(item => {
+                        html += `<tr>
+                            <td>${item.line_number}</td>
+                            <td>${item.material_code}</td>
+                            <td>${item.material_name}</td>
+                            <td>${item.quantity}</td>
+                            <td>${item.unit}</td>
+                            <td>${item.project_category}</td>
+                        </tr>`;
+                    });
+                    
+                    html += '</tbody></table></div>';
+                    
+                    // 使用Bootstrap模态框显示
+                    const modal = document.createElement('div');
+                    modal.className = 'modal fade';
+                    modal.innerHTML = `
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">配方详情</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    ${html}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.body.appendChild(modal);
+                    const bsModal = new bootstrap.Modal(modal);
+                    bsModal.show();
+                    
+                    modal.addEventListener('hidden.bs.modal', function() {
+                        document.body.removeChild(modal);
+                    });
+                })
+                .catch(error => console.error('查看配方失败:', error));
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            const container = document.querySelector('.container');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
+        }
+
+        // 批量导出所有配方
+        function exportAllRecipes() {
+            // 显示加载状态
+            const exportBtn = event.target;
+            const originalText = exportBtn.innerHTML;
+            exportBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> 导出中...';
+            exportBtn.disabled = true;
+            
+            // 调用批量导出API
+            fetch('/api/recipe/export_all')
+                .then(response => {
+                    if (response.ok) {
+                        // 创建下载链接
+                        return response.blob();
+                    } else {
+                        throw new Error('导出失败');
+                    }
+                })
+                .then(blob => {
+                    // 创建下载链接
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = '所有配方.xlsx';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    showAlert('所有配方导出成功！', 'success');
+                })
+                .catch(error => {
+                    console.error('批量导出失败:', error);
+                    showAlert('批量导出失败，请重试', 'danger');
+                })
+                .finally(() => {
+                    // 恢复按钮状态
+                    exportBtn.innerHTML = originalText;
+                    exportBtn.disabled = false;
+                });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOM生成系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .form-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 0;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .btn-generate {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+        }
+        .recipe-info {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 4px solid #667eea;
+        }
+        .recipe-checkbox {
+            margin-bottom: 10px;
+        }
+        .recipe-checkbox input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        .recipe-checkbox label {
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .recipe-selection-container {
+            background-color: #f8f9fa;
+        }
+        .recipe-list {
+            min-height: 200px;
+        }
+        .recipe-checkbox {
+            padding: 8px 12px;
+            border-bottom: 1px solid #dee2e6;
+            transition: background-color 0.2s;
+        }
+        .recipe-checkbox:hover {
+            background-color: #e9ecef;
+        }
+        .recipe-checkbox:last-child {
+            border-bottom: none;
+        }
+        .selected-recipes {
+            background: #e8f5e8;
+            border: 1px solid #28a745;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .selected-recipe-item {
+            background: white;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-left: 3px solid #28a745;
+        }
+        
+        /* Excel风格表格样式 */
+        .excel-table-container {
+            max-height: 500px;
+            overflow-y: auto;
+            border: 2px solid #dee2e6;
+            border-radius: 4px;
+        }
+        
+        .excel-table {
+            margin-bottom: 0;
+            font-size: 12px;
+        }
+        
+        .excel-table th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: #343a40 !important;
+            color: white !important;
+            font-weight: bold;
+            text-align: center;
+            vertical-align: middle;
+            padding: 8px 4px;
+            border: 1px solid #495057;
+        }
+        
+        .excel-table td {
+            padding: 4px;
+            border: 1px solid #dee2e6;
+            vertical-align: middle;
+        }
+        
+        .excel-table input,
+        .excel-table select {
+            border: none;
+            background: transparent;
+            width: 100%;
+            padding: 2px 4px;
+            font-size: 12px;
+        }
+        
+        .excel-table input:focus,
+        .excel-table select:focus {
+            outline: 2px solid #007bff;
+            background-color: #fff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        
+        .excel-table input:hover,
+        .excel-table select:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .excel-table .row-number {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            text-align: center;
+            color: #6c757d;
+        }
+        
+        /* 选中行高亮 */
+        .excel-table tbody tr.selected {
+            background-color: #e3f2fd !important;
+        }
+        
+        /* 滚动条样式 */
+        .excel-table-container::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        .excel-table-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .excel-table-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        
+        .excel-table-container::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+</head>
+<body>
+    <div class="header text-center">
+        <div class="container">
+            <h1><i class="bi bi-gear-wide-connected"></i> BOM生成系统</h1>
+            <p class="lead">自动生成物料清单表，提高工作效率</p>
+            <div class="mt-3">
+                <a href="/admin" class="btn btn-outline-light btn-lg">
+                    <i class="bi bi-gear"></i> 配方管理
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="form-container">
+                    <h3 class="text-center mb-4">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> 生成BOM表
+                    </h3>
+                    
+                    <form id="bomForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="parent_material_code" class="form-label">
+                                        <i class="bi bi-box"></i> 父项物料号 *
+                                    </label>
+                                    <input type="text" class="form-control" id="parent_material_code" 
+                                           required placeholder="请输入物料编码">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="parent_material_name" class="form-label">
+                                        <i class="bi bi-tag"></i> 物料名称 *
+                                    </label>
+                                    <input type="text" class="form-control" id="parent_material_name" 
+                                           required placeholder="请输入物料名称">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="basic_quantity" class="form-label">
+                                        <i class="bi bi-123"></i> 基本数量 *
+                                    </label>
+                                    <input type="number" class="form-control" id="basic_quantity" 
+                                           step="0.001" required placeholder="请输入数量">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="basic_unit" class="form-label">
+                                        <i class="bi bi-rulers"></i> 基本单位
+                                    </label>
+                                    <select class="form-control" id="basic_unit">
+                                        <option value="PCS">PCS</option>
+                                        <option value="KG">KG</option>
+                                        <option value="M" selected>M</option>
+                                        <option value="L">L</option>
+                                        <option value="M2">M²</option>
+                                        <option value="M3">M³</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="bi bi-list-check"></i> 选择配方 * (可多选)
+                            </label>
+                            
+                            <!-- 搜索框 -->
+                            <div class="input-group mb-2">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control" id="recipeSearch" placeholder="输入配方名称或描述进行搜索...">
+                                <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">清空</button>
+                            </div>
+                            
+                            <!-- 配方选择区域 -->
+                            <div class="recipe-selection-container border rounded p-3" style="max-height: 300px; overflow-y: auto;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <small class="text-muted">已选择: <span id="selectedCount">0</span> 个配方</small>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="selectAllVisible()">全选当前页</button>
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="clearAllSelection()">清空选择</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- 分页控制 -->
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <small class="text-muted">
+                                        显示 <span id="currentPageInfo">1-10</span> / 共 <span id="totalRecipes">0</span> 个配方
+                                    </small>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-secondary" onclick="changePage(-1)" id="prevPage">上一页</button>
+                                        <span class="btn btn-outline-secondary disabled" id="pageInfo">第1页</span>
+                                        <button class="btn btn-outline-secondary" onclick="changePage(1)" id="nextPage">下一页</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- 配方列表 -->
+                                <div id="recipeCheckboxes" class="recipe-list">
+                                    <!-- 配方复选框将在这里动态生成 -->
+                                </div>
+                                
+                                <!-- 加载提示 -->
+                                <div id="loadingRecipes" class="text-center text-muted d-none">
+                                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                                    <span class="ms-2">加载中...</span>
+                                </div>
+                            </div>
+                            
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i> 
+                                支持搜索和分页浏览，可以快速找到需要的配方。已选择的配方会在下方显示详细信息。
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg btn-generate">
+                                <i class="bi bi-file-earmark-spreadsheet"></i> 生成BOM表
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- 批量BOM生成功能 -->
+                    <div class="mt-5">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-table"></i> 批量BOM生成</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-3">
+                                    <i class="bi bi-info-circle"></i> 
+                                    使用弹窗表格直接输入多个物料信息，一次性生成批量BOM表，提高工作效率。
+                                </p>
+                                
+                                <div class="text-center">
+                                    <button class="btn btn-primary btn-lg" onclick="showBatchBomModal()">
+                                        <i class="bi bi-table"></i> 弹窗表格输入
+                                    </button>
+                                    <small class="text-muted d-block mt-2">
+                                        支持直接输入或从Excel复制粘贴数据
+                                    </small>
+                                    
+                                    <div class="mt-3">
+                                        <a href="/admin" class="btn btn-outline-primary">
+                                            <i class="bi bi-gear"></i> 配方管理
+                                        </a>
+                                        <small class="text-muted d-block mt-2">
+                                            管理配方信息，添加、编辑、删除配方
+                                        </small>
+                                    </div>
+                                </div>
+                                
+                                <!-- 批量生成结果 -->
+                                <div id="batchBomResult" class="mt-3" style="display: none;">
+                                    <div class="alert alert-success">
+                                        <h6><i class="bi bi-check-circle"></i> 批量生成结果</h6>
+                                        <div id="batchBomDetails"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="selectedRecipesInfo" class="selected-recipes" style="display: none;">
+                        <h5><i class="bi bi-info-circle"></i> 已选择的配方详情</h5>
+                        <div id="selectedRecipesDetails"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-question-circle"></i> 使用说明</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>必填字段说明：</h6>
+                                <ul>
+                                    <li><strong>父项物料号</strong>：自制产成品的物料编码</li>
+                                    <li><strong>物料名称</strong>：父件物料的描述名称</li>
+                                    <li><strong>基本数量</strong>：BOM产品的基本数量</li>
+                                    <li><strong>配方选择</strong>：可选择多个配方生成组合BOM表</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>系统特点：</h6>
+                                <ul>
+                                    <li>支持多配方组合生成BOM表</li>
+                                    <li>自动生成标准格式的BOM表</li>
+                                    <li>支持多种配方管理</li>
+                                    <li>自动计算行项目编号</li>
+                                    <li>导出Excel格式文件</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量BOM生成弹窗 -->
+    <div class="modal fade" id="batchBomModal" tabindex="-1" aria-labelledby="batchBomModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="batchBomModalLabel">
+                        <i class="bi bi-table"></i> 批量BOM生成 - 表格输入
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-text">行数</span>
+                                <input type="number" class="form-control" id="rowCount" value="35" min="1" max="1000">
+                                <button class="btn btn-outline-secondary" onclick="updateTableRows()">更新表格</button>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-outline-success" onclick="pasteFromExcel()" title="从Excel粘贴数据">
+                                    <i class="bi bi-clipboard"></i> Excel粘贴
+                                </button>
+                                <button class="btn btn-outline-primary" onclick="pasteFromExcelRange()" title="粘贴Excel范围数据（如A2:E36）">
+                                    <i class="bi bi-table"></i> 范围粘贴
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="exportTableToExcel()" title="导出当前表格数据">
+                                    <i class="bi bi-download"></i> 导出
+                                </button>
+                                <button class="btn btn-outline-info" onclick="clearTable()" title="清空表格内容">
+                                    <i class="bi bi-trash"></i> 清空
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Excel风格的表格 -->
+                    <div class="excel-table-container">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm excel-table" id="batchBomTable">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th class="excel-header" style="width: 60px;">行号</th>
+                                        <th class="excel-header" style="width: 120px;">父项物料号 *</th>
+                                        <th class="excel-header" style="width: 150px;">物料名称 *</th>
+                                        <th class="excel-header" style="width: 100px;">基本数量 *</th>
+                                        <th class="excel-header" style="width: 100px;">基本单位 *</th>
+                                        <th class="excel-header" style="width: 150px;">配方名称 *</th>
+                                        <th class="excel-header" style="width: 120px;">备注</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="batchBomTableBody">
+                                    <!-- 表格行将在这里动态生成 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- 粘贴说明 -->
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Excel粘贴说明：</strong><br>
+                        1. <strong>单列粘贴</strong>：复制Excel中的一列数据，点击"Excel粘贴"按钮<br>
+                        2. <strong>范围粘贴</strong>：复制Excel中的多列数据（如A2:E36），点击"范围粘贴"按钮<br>
+                        3. <strong>数据格式</strong>：父项物料号,物料名称,基本数量,基本单位,配方名称,备注<br>
+                        4. <strong>支持操作</strong>：Ctrl+C复制，Ctrl+V粘贴，Delete删除，Tab键切换单元格
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>使用说明：</strong><br>
+                        1. 配方名称支持多个，用逗号分隔（如：标准配方1,标准配方2）<br>
+                        2. 可以从Excel复制数据，然后点击"从Excel粘贴"按钮<br>
+                        3. 支持调整行数，点击"更新表格"按钮生效<br>
+                        4. 必填字段用 * 标记，请确保填写完整
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="generateBomFromTable()">
+                        <i class="bi bi-gear"></i> 生成BOM表
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let selectedRecipes = new Set();
+        let allRecipes = []; // 存储所有配方数据
+        let filteredRecipes = []; // 存储过滤后的配方数据
+        let currentPage = 1;
+        const pageSize = 10; // 每页显示10个配方
+
+        // 页面加载完成后获取配方列表
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRecipes();
+            setupSearch();
+        });
+
+        // 设置搜索功能
+        function setupSearch() {
+            const searchInput = document.getElementById('recipeSearch');
+            searchInput.addEventListener('input', function() {
+                filterRecipes(this.value);
+            });
+        }
+
+        // 过滤配方
+        function filterRecipes(searchTerm) {
+            if (!searchTerm.trim()) {
+                filteredRecipes = [...allRecipes];
+            } else {
+                const term = searchTerm.toLowerCase();
+                filteredRecipes = allRecipes.filter(recipe => 
+                    recipe.name.toLowerCase().includes(term) || 
+                    (recipe.description && recipe.description.toLowerCase().includes(term))
+                );
+            }
+            currentPage = 1;
+            renderRecipes();
+            updatePagination();
+        }
+
+        // 清空搜索
+        function clearSearch() {
+            document.getElementById('recipeSearch').value = '';
+            filterRecipes('');
+        }
+
+        // 加载配方列表
+        function loadRecipes() {
+            showLoading(true);
+            fetch('/api/recipes')
+                .then(response => response.json())
+                .then(recipes => {
+                    allRecipes = recipes;
+                    filteredRecipes = [...recipes];
+                    renderRecipes();
+                    updatePagination();
+                    updateSelectedCount();
+                    showLoading(false);
+                })
+                .catch(error => {
+                    console.error('加载配方失败:', error);
+                    showLoading(false);
+                    showAlert('加载配方失败，请刷新页面重试', 'danger');
+                });
+        }
+
+        // 渲染配方列表
+        function renderRecipes() {
+            const container = document.getElementById('recipeCheckboxes');
+            container.innerHTML = '';
+            
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const pageRecipes = filteredRecipes.slice(startIndex, endIndex);
+            
+            if (pageRecipes.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted py-3">没有找到匹配的配方</div>';
+                return;
+            }
+            
+            pageRecipes.forEach(recipe => {
+                const div = document.createElement('div');
+                div.className = 'recipe-checkbox';
+                const isChecked = selectedRecipes.has(recipe.id);
+                div.innerHTML = `
+                    <input type="checkbox" id="recipe_${recipe.id}" value="${recipe.id}" 
+                           onchange="toggleRecipe(${recipe.id}, '${recipe.name}')" ${isChecked ? 'checked' : ''}>
+                    <label for="recipe_${recipe.id}">
+                        <strong>${recipe.name}</strong> - ${recipe.description || '无描述'}
+                    </label>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // 更新分页信息
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredRecipes.length / pageSize);
+            const startIndex = (currentPage - 1) * pageSize + 1;
+            const endIndex = Math.min(currentPage * pageSize, filteredRecipes.length);
+            
+            document.getElementById('totalRecipes').textContent = filteredRecipes.length;
+            document.getElementById('currentPageInfo').textContent = `${startIndex}-${endIndex}`;
+            document.getElementById('pageInfo').textContent = `第${currentPage}页`;
+            
+            // 更新分页按钮状态
+            document.getElementById('prevPage').disabled = currentPage <= 1;
+            document.getElementById('nextPage').disabled = currentPage >= totalPages;
+        }
+
+        // 切换页面
+        function changePage(delta) {
+            const newPage = currentPage + delta;
+            const totalPages = Math.ceil(filteredRecipes.length / pageSize);
+            
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                renderRecipes();
+                updatePagination();
+            }
+        }
+
+        // 全选当前页
+        function selectAllVisible() {
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const pageRecipes = filteredRecipes.slice(startIndex, endIndex);
+            
+            pageRecipes.forEach(recipe => {
+                if (!selectedRecipes.has(recipe.id)) {
+                    selectedRecipes.add(recipe.id);
+                }
+            });
+            
+            renderRecipes();
+            updateSelectedRecipesInfo();
+            updateSelectedCount();
+        }
+
+        // 清空所有选择
+        function clearAllSelection() {
+            selectedRecipes.clear();
+            renderRecipes();
+            updateSelectedRecipesInfo();
+            updateSelectedCount();
+        }
+
+        // 更新已选择数量
+        function updateSelectedCount() {
+            document.getElementById('selectedCount').textContent = selectedRecipes.size;
+        }
+
+        // 显示/隐藏加载状态
+        function showLoading(show) {
+            const loadingDiv = document.getElementById('loadingRecipes');
+            if (show) {
+                loadingDiv.classList.remove('d-none');
+            } else {
+                loadingDiv.classList.add('d-none');
+            }
+        }
+
+        // 切换配方选择
+        function toggleRecipe(recipeId, recipeName) {
+            if (selectedRecipes.has(recipeId)) {
+                selectedRecipes.delete(recipeId);
+            } else {
+                selectedRecipes.add(recipeId);
+            }
+            
+            updateSelectedRecipesInfo();
+            updateSelectedCount();
+        }
+
+        // 更新已选择配方的信息
+        function updateSelectedRecipesInfo() {
+            const container = document.getElementById('selectedRecipesInfo');
+            const detailsDiv = document.getElementById('selectedRecipesDetails');
+            
+            if (selectedRecipes.size === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            container.style.display = 'block';
+            detailsDiv.innerHTML = '';
+            
+            selectedRecipes.forEach(recipeId => {
+                fetch(`/api/recipe/${recipeId}`)
+                    .then(response => response.json())
+                    .then(items => {
+                        const recipeDiv = document.createElement('div');
+                        recipeDiv.className = 'selected-recipe-item';
+                        
+                        let html = `<h6><i class="bi bi-list-check"></i> 配方ID: ${recipeId}</h6>`;
+                        html += '<div class="table-responsive"><table class="table table-sm">';
+                        html += '<thead><tr><th>行号</th><th>物料编码</th><th>物料名称</th><th>数量</th><th>单位</th></tr></thead><tbody>';
+                        
+                        items.forEach(item => {
+                            html += `<tr>
+                                <td>${item.line_number}</td>
+                                <td>${item.material_code}</td>
+                                <td>${item.material_name}</td>
+                                <td>${item.quantity}</td>
+                                <td>${item.unit}</td>
+                            </tr>`;
+                        });
+                        
+                        html += '</tbody></table></div>';
+                        recipeDiv.innerHTML = html;
+                        detailsDiv.appendChild(recipeDiv);
+                    })
+                    .catch(error => console.error('加载配方详情失败:', error));
+            });
+        }
+
+        // 表单提交处理
+        document.getElementById('bomForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (selectedRecipes.size === 0) {
+                showAlert('请至少选择一个配方', 'warning');
+                return;
+            }
+            
+            const formData = {
+                parent_material_code: document.getElementById('parent_material_code').value,
+                parent_material_name: document.getElementById('parent_material_name').value,
+                basic_quantity: parseFloat(document.getElementById('basic_quantity').value),
+                basic_unit: document.getElementById('basic_unit').value,
+                recipe_ids: Array.from(selectedRecipes)
+            };
+
+            // 显示加载状态
+            const submitBtn = document.querySelector('.btn-generate');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> 生成中...';
+            submitBtn.disabled = true;
+
+            fetch('/api/generate_bom', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 下载文件
+                    window.location.href = `/api/download_bom/${encodeURIComponent(data.file_path)}`;
+                    
+                    // 显示成功消息
+                    showAlert(`BOM表生成成功！已选择 ${selectedRecipes.size} 个配方`, 'success');
+                    
+                    // 重置表单
+                    document.getElementById('bomForm').reset();
+                    selectedRecipes.clear();
+                    updateSelectedRecipesInfo();
+                    updateSelectedCount();
+                } else {
+                    showAlert('生成失败：' + data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('生成BOM失败:', error);
+                showAlert('生成失败，请检查网络连接', 'danger');
+            })
+            .finally(() => {
+                // 恢复按钮状态
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            });
+        });
+
+        // 显示提示消息
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            const container = document.querySelector('.container');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            // 3秒后自动消失
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
+        }
+
+
+
+        // 下载批量生成的BOM文件
+        function downloadBatchBom(filePath) {
+            window.location.href = `/api/download_batch_bom/${encodeURIComponent(filePath)}`;
+        }
+
+        // 显示批量BOM生成弹窗
+        function showBatchBomModal() {
+            const modal = new bootstrap.Modal(document.getElementById('batchBomModal'));
+            modal.show();
+            updateTableRows(); // 弹窗打开时更新表格行数
+        }
+
+        // 更新表格行数
+        function updateTableRows() {
+            const rowCount = document.getElementById('rowCount').value;
+            const tableBody = document.getElementById('batchBomTableBody');
+            tableBody.innerHTML = ''; // 清空现有行
+
+            for (let i = 1; i <= parseInt(rowCount); i++) {
+                const row = document.createElement('tr');
+                row.setAttribute('data-row', i);
+                row.innerHTML = `
+                    <td class="row-number">${i}</td>
+                    <td><input type="text" class="form-control form-control-sm excel-input" data-col="1" required></td>
+                    <td><input type="text" class="form-control form-control-sm excel-input" data-col="2" required></td>
+                    <td><input type="number" class="form-control form-control-sm excel-input" data-col="3" step="0.001" required></td>
+                    <td>
+                        <select class="form-control form-control-sm excel-input" data-col="4">
+                            <option value="PCS">PCS</option>
+                            <option value="KG">KG</option>
+                            <option value="M">M</option>
+                            <option value="L">L</option>
+                            <option value="M2">M²</option>
+                            <option value="M3">M³</option>
+                        </select>
+                    </td>
+                    <td><input type="text" class="form-control form-control-sm excel-input" data-col="5" required></td>
+                    <td><input type="text" class="form-control form-control-sm excel-input" data-col="6"></td>
+                `;
+                tableBody.appendChild(row);
+            }
+            
+            // 添加Excel风格的键盘导航
+            setupExcelNavigation();
+        }
+
+        // 从Excel粘贴数据（单列或多列）
+        function pasteFromExcel() {
+            const userInput = prompt('请从Excel复制数据后粘贴到这里：\n\n格式：父项物料号,物料名称,基本数量,基本单位,配方名称,备注\n\n每行一个物料，用逗号分隔各列');
+            
+            if (userInput && userInput.trim()) {
+                pasteDataToTable(userInput);
+            }
+        }
+        
+        // 从Excel范围粘贴数据（如A2:E36）
+        function pasteFromExcelRange() {
+            const userInput = prompt('请从Excel复制范围数据后粘贴到这里：\n\n例如：A2:E36 表示从A列第2行到E列第36行\n\n请粘贴数据：');
+            
+            if (userInput && userInput.trim()) {
+                pasteDataToTable(userInput, true);
+            }
+        }
+        
+        // 粘贴数据到表格的通用函数
+        function pasteDataToTable(data, isRange = false) {
+            const lines = data.trim().split('\n');
+            const tableBody = document.getElementById('batchBomTableBody');
+            
+            // 清空现有行
+            tableBody.innerHTML = '';
+            
+            // 更新行数输入框
+            document.getElementById('rowCount').value = lines.length;
+            
+            // 为每行数据创建表格行
+            lines.forEach((line, index) => {
+                const columns = line.split('\t').map(col => col.trim()); // 使用制表符分割（Excel复制时默认）
+                
+                const row = document.createElement('tr');
+                row.setAttribute('data-row', index + 1);
+                
+                // 确保有足够的列
+                while (columns.length < 6) {
+                    columns.push('');
+                }
+                
+                row.innerHTML = `
+                    <td class="row-number">${index + 1}</td>
+                    <td><input type="text" class="form-control form-control-sm excel-input" data-col="1" value="${columns[0] || ''}" required></td>
+                    <td><input type="text" class="form-control form-control-sm excel-input" data-col="2" value="${columns[1] || ''}" required></td>
+                    <td><input type="number" class="form-control form-control-sm excel-input" data-col="3" step="0.001" value="${columns[2] || ''}" required></td>
+                    <td>
+                        <select class="form-control form-control-sm excel-input" data-col="4">
+                            <option value="PCS" ${columns[3] === 'PCS' ? 'selected' : ''}>PCS</option>
+                            <option value="KG" ${columns[3] === 'KG' ? 'selected' : ''}>KG</option>
+                            <option value="M" ${columns[3] === 'M' ? 'selected' : ''}>M</option>
+                            <option value="L" ${columns[3] === 'L' ? 'selected' : ''}>L</option>
+                            <option value="M2" ${columns[3] === 'M2' ? 'selected' : ''}>M²</option>
+                            <option value="M3" ${columns[3] === 'M3' ? 'selected' : ''}>M³</option>
+                        </select>
+                    </td>
+                    <td><input type="text" class="form-control form-control-sm excel-input" data-col="5" value="${columns[4] || ''}" required></td>
+                    <td><input type="text" class="form-control form-control-sm excel-input" data-col="6" value="${columns[5] || ''}"></td>
+                `;
+                tableBody.appendChild(row);
+            });
+            
+            // 重新设置Excel导航
+            setupExcelNavigation();
+            
+            showAlert(`成功导入 ${lines.length} 行数据！`, 'success');
+        }
+
+        // 清空表格
+        function clearTable() {
+            const tableBody = document.getElementById('batchBomTableBody');
+            tableBody.innerHTML = ''; // 清空现有行
+            updateTableRows(); // 重新生成默认行数
+            showAlert('表格已清空。', 'info');
+        }
+        
+        // 设置Excel风格的键盘导航
+        function setupExcelNavigation() {
+            const inputs = document.querySelectorAll('.excel-input');
+            
+            inputs.forEach((input, index) => {
+                // 键盘导航
+                input.addEventListener('keydown', function(e) {
+                    const currentRow = this.closest('tr');
+                    const currentCol = parseInt(this.getAttribute('data-col'));
+                    const currentRowIndex = Array.from(currentRow.parentNode.children).indexOf(currentRow);
+                    
+                    switch(e.key) {
+                        case 'Tab':
+                            e.preventDefault();
+                            navigateToNextCell(currentRowIndex, currentCol, e.shiftKey);
+                            break;
+                        case 'Enter':
+                            e.preventDefault();
+                            navigateToNextCell(currentRowIndex + 1, currentCol, false);
+                            break;
+                        case 'ArrowUp':
+                            e.preventDefault();
+                            navigateToNextCell(currentRowIndex - 1, currentCol, false);
+                            break;
+                        case 'ArrowDown':
+                            e.preventDefault();
+                            navigateToNextCell(currentRowIndex + 1, currentCol, false);
+                            break;
+                        case 'ArrowLeft':
+                            e.preventDefault();
+                            navigateToNextCell(currentRowIndex, currentCol - 1, false);
+                            break;
+                        case 'ArrowRight':
+                            e.preventDefault();
+                            navigateToNextCell(currentRowIndex, currentCol + 1, false);
+                            break;
+                    }
+                });
+                
+                // 选中行高亮
+                input.addEventListener('focus', function() {
+                    const row = this.closest('tr');
+                    document.querySelectorAll('.excel-table tbody tr').forEach(r => r.classList.remove('selected'));
+                    row.classList.add('selected');
+                });
+                
+                // 双击编辑
+                input.addEventListener('dblclick', function() {
+                    this.select();
+                });
+            });
+        }
+        
+        // 导航到下一个单元格
+        function navigateToNextCell(rowIndex, colIndex, reverse = false) {
+            const tableBody = document.getElementById('batchBomTableBody');
+            const rows = tableBody.children;
+            
+            if (reverse) {
+                // 反向导航
+                if (colIndex > 1) {
+                    colIndex--;
+                } else if (rowIndex > 0) {
+                    rowIndex--;
+                    colIndex = 6;
+                }
+            } else {
+                // 正向导航
+                if (colIndex < 6) {
+                    colIndex++;
+                } else if (rowIndex < rows.length - 1) {
+                    rowIndex++;
+                    colIndex = 1;
+                }
+            }
+            
+            // 确保索引在有效范围内
+            if (rowIndex >= 0 && rowIndex < rows.length && colIndex >= 1 && colIndex <= 6) {
+                const targetRow = rows[rowIndex];
+                const targetCell = targetRow.querySelector(`[data-col="${colIndex}"]`);
+                if (targetCell) {
+                    targetCell.focus();
+                    targetCell.select();
+                }
+            }
+        }
+        
+        // 导出表格数据到Excel
+        function exportTableToExcel() {
+            const tableBody = document.getElementById('batchBomTableBody');
+            const rows = tableBody.children;
+            
+            if (rows.length === 0) {
+                showAlert('表格中没有数据可导出', 'warning');
+                return;
+            }
+            
+            let csvContent = '父项物料号,物料名称,基本数量,基本单位,配方名称,备注\n';
+            
+            for (let i = 0; i < rows.length; i++) {
+                const cells = rows[i].children;
+                const rowData = [
+                    cells[1].querySelector('input').value,
+                    cells[2].querySelector('input').value,
+                    cells[3].querySelector('input').value,
+                    cells[4].querySelector('select').value,
+                    cells[5].querySelector('input').value,
+                    cells[6].querySelector('input').value
+                ];
+                csvContent += rowData.join(',') + '\n';
+            }
+            
+            // 创建下载链接
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'BOM表格数据.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showAlert('表格数据已导出为CSV文件', 'success');
+        }
+
+        // 从表格生成BOM
+        function generateBomFromTable() {
+            const tableBody = document.getElementById('batchBomTableBody');
+            const rows = tableBody.children;
+            
+            if (rows.length === 0) {
+                showAlert('表格中没有数据，请先添加数据', 'warning');
+                return;
+            }
+            
+            const bomData = [];
+            let errorCount = 0;
+
+            for (let i = 0; i < rows.length; i++) {
+                const cells = rows[i].children;
+                
+                // 正确获取输入框和选择框的值
+                const parentMaterialCode = cells[1].querySelector('input')?.value?.trim() || '';
+                const parentMaterialName = cells[2].querySelector('input')?.value?.trim() || '';
+                const basicQuantity = parseFloat(cells[3].querySelector('input')?.value || 0);
+                const basicUnit = cells[4].querySelector('select')?.value || '';
+                const recipeNames = cells[5].querySelector('input')?.value?.trim() || '';
+                const notes = cells[6].querySelector('input')?.value?.trim() || '';
+                
+                const rowData = {
+                    line_number: parseInt(cells[0].textContent),
+                    parent_material_code: parentMaterialCode,
+                    parent_material_name: parentMaterialName,
+                    basic_quantity: basicQuantity,
+                    basic_unit: basicUnit,
+                    recipe_names: recipeNames.split(',').map(name => name.trim()).filter(name => name),
+                    notes: notes
+                };
+
+                // 验证必填字段
+                if (!rowData.parent_material_code || !rowData.parent_material_name || 
+                    isNaN(rowData.basic_quantity) || rowData.basic_quantity <= 0 || 
+                    !rowData.recipe_names.length) {
+                    errorCount++;
+                    bomData.push({
+                        line_number: rowData.line_number,
+                        error: '必填字段缺失或数量为零或配方名称缺失'
+                    });
+                } else {
+                    bomData.push(rowData);
+                }
+            }
+
+            if (errorCount > 0) {
+                showAlert(`生成失败，存在 ${errorCount} 行数据填写错误。`, 'danger');
+                console.log('错误详情:', bomData.filter(item => item.error));
+                return;
+            }
+
+            // 显示加载状态
+            const submitBtn = document.querySelector('#batchBomModal .btn-primary');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> 生成中...';
+            submitBtn.disabled = true;
+
+            console.log('准备发送的BOM数据:', bomData);
+
+            // 隐藏弹窗
+            const modal = bootstrap.Modal.getInstance(document.getElementById('batchBomModal'));
+            if (modal) {
+                modal.hide();
+            }
+
+            fetch('/api/bom/batch_generate_table', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ bom_data: bomData })
+            })
+            .then(response => {
+                console.log('API响应状态:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('API响应数据:', data);
+                if (data.success) {
+                    // 下载文件
+                    window.location.href = `/api/download_batch_bom/${encodeURIComponent(data.file_path)}`;
+                    
+                    // 显示成功消息
+                    showAlert(`批量BOM表生成成功！共生成 ${data.bom_count} 个BOM表`, 'success');
+                } else {
+                    let errorMessage = data.message;
+                    if (data.errors && data.errors.length > 0) {
+                        errorMessage += '<br>详细错误：<br>' + data.errors.join('<br>');
+                    }
+                    showAlert(errorMessage, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('批量BOM生成失败:', error);
+                showAlert('批量生成失败，请检查网络连接', 'danger');
+            })
+            .finally(() => {
+                // 恢复按钮状态
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html>
