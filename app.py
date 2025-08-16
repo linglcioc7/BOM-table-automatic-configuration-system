@@ -37,7 +37,7 @@ class BOMRequest(db.Model):
     parent_material_name = db.Column(db.String(200), nullable=False)
     basic_quantity = db.Column(db.Float, nullable=False)
     basic_unit = db.Column(db.String(20), nullable=False)
-    recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), nullable=False)
+    recipe_ids = db.Column(db.Text, nullable=False)  # 存储多个配方ID，用逗号分隔
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 @app.route('/')
@@ -114,20 +114,42 @@ def delete_recipe(recipe_id):
 def generate_bom():
     data = request.json
     
+    # 检查必要字段
+    if not all(key in data for key in ['parent_material_code', 'parent_material_name', 'basic_quantity', 'basic_unit', 'recipe_ids']):
+        return jsonify({'success': False, 'message': '缺少必要字段'}), 400
+    
+    if not data['recipe_ids']:
+        return jsonify({'success': False, 'message': '请选择至少一个配方'}), 400
+    
     # 创建BOM请求记录
     bom_request = BOMRequest(
         parent_material_code=data['parent_material_code'],
         parent_material_name=data['parent_material_name'],
         basic_quantity=data['basic_quantity'],
         basic_unit=data['basic_unit'],
-        recipe_id=data['recipe_id']
+        recipe_ids=','.join(map(str, data['recipe_ids']))  # 将配方ID数组转换为逗号分隔的字符串
     )
     db.session.add(bom_request)
     db.session.commit()
     
-    # 获取配方信息
-    recipe = Recipe.query.get(data['recipe_id'])
-    items = RecipeItem.query.filter_by(recipe_id=data['recipe_id']).order_by(RecipeItem.line_number).all()
+    # 获取所有选中的配方信息
+    all_items = []
+    for recipe_id in data['recipe_ids']:
+        recipe = Recipe.query.get(recipe_id)
+        if recipe:
+            items = RecipeItem.query.filter_by(recipe_id=recipe_id).order_by(RecipeItem.line_number).all()
+            # 为每个配方项添加配方信息
+            for item in items:
+                all_items.append({
+                    'recipe_name': recipe.recipe_name,
+                    'recipe_description': recipe.description,
+                    'line_number': item.line_number,
+                    'material_code': item.material_code,
+                    'material_name': item.material_name,
+                    'quantity': item.quantity,
+                    'unit': item.unit,
+                    'project_category': item.project_category
+                })
     
     # 生成Excel文件
     wb = openpyxl.Workbook()
@@ -149,48 +171,38 @@ def generate_bom():
         cell.font = Font(bold=True)
         cell.alignment = Alignment(horizontal='center', vertical='center')
     
+    # 按配方名称排序
+    all_items.sort(key=lambda x: x['recipe_name'])
+    
     # 数据行
     row = 2
-    for i, item in enumerate(items):
-        # 父项行（只在第一个子项时显示）
-        if i == 0:
-            ws.cell(row=row, column=1, value='')  # 字段名称
-            ws.cell(row=row, column=2, value='P060')  # 工厂
-            ws.cell(row=row, column=3, value=recipe.description)  # BOM可选文本
-            ws.cell(row=row, column=4, value=data['parent_material_code'])  # 父项物料号
-            ws.cell(row=row, column=5, value=data['parent_material_name'])  # 物料名称
-            ws.cell(row=row, column=6, value='')  # 生效日期
-            ws.cell(row=row, column=7, value='1')  # BOM用途
-            ws.cell(row=row, column=8, value=f"{i+1:02d}")  # 可选BOM
-            ws.cell(row=row, column=9, value='01')  # BOM状态
-            ws.cell(row=row, column=10, value=data['basic_quantity'])  # 基本数量
-            ws.cell(row=row, column=11, value=data['basic_unit'])  # 基本单位
-            ws.cell(row=row, column=12, value='')  # 行项目号
-            ws.cell(row=row, column=13, value='')  # 项目类别
-            ws.cell(row=row, column=14, value='')  # 子项物料号
-            ws.cell(row=row, column=15, value='')  # 子项物料描述
-            ws.cell(row=row, column=16, value='')  # 子项数量
-            ws.cell(row=row, column=17, value='')  # 子项单位
-            row += 1
+    current_recipe = None
+    bom_counter = 0
+    
+    for item in all_items:
+        # 如果是新配方，更新计数器
+        if current_recipe != item['recipe_name']:
+            current_recipe = item['recipe_name']
+            bom_counter += 1
         
-        # 子项行
+        # 每行都填写完整的数据
         ws.cell(row=row, column=1, value='')  # 字段名称
         ws.cell(row=row, column=2, value='P060')  # 工厂
-        ws.cell(row=row, column=3, value='')  # BOM可选文本
-        ws.cell(row=row, column=4, value='')  # 父项物料号
-        ws.cell(row=row, column=5, value='')  # 物料名称
+        ws.cell(row=row, column=3, value=item['recipe_description'])  # BOM可选文本
+        ws.cell(row=row, column=4, value=data['parent_material_code'])  # 父项物料号
+        ws.cell(row=row, column=5, value=data['parent_material_name'])  # 物料名称
         ws.cell(row=row, column=6, value='')  # 生效日期
-        ws.cell(row=row, column=7, value='')  # BOM用途
-        ws.cell(row=row, column=8, value='')  # 可选BOM
-        ws.cell(row=row, column=9, value='')  # BOM状态
-        ws.cell(row=row, column=10, value='')  # 基本数量
-        ws.cell(row=row, column=11, value='')  # 基本单位
-        ws.cell(row=row, column=12, value=item.line_number)  # 行项目号（直接使用字符串）
-        ws.cell(row=row, column=13, value=item.project_category)  # 项目类别
-        ws.cell(row=row, column=14, value=item.material_code)  # 子项物料号
-        ws.cell(row=row, column=15, value=item.material_name)  # 子项物料描述
-        ws.cell(row=row, column=16, value=item.quantity)  # 子项数量
-        ws.cell(row=row, column=17, value=item.unit)  # 子项单位
+        ws.cell(row=row, column=7, value='1')  # BOM用途
+        ws.cell(row=row, column=8, value=f"{bom_counter:02d}")  # 可选BOM
+        ws.cell(row=row, column=9, value='01')  # BOM状态
+        ws.cell(row=row, column=10, value=data['basic_quantity'])  # 基本数量
+        ws.cell(row=row, column=11, value=data['basic_unit'])  # 基本单位
+        ws.cell(row=row, column=12, value=item['line_number'])  # 行项目号
+        ws.cell(row=row, column=13, value=item['project_category'])  # 项目类别
+        ws.cell(row=row, column=14, value=item['material_code'])  # 子项物料号
+        ws.cell(row=row, column=15, value=item['material_name'])  # 子项物料描述
+        ws.cell(row=row, column=16, value=item['quantity'])  # 子项数量
+        ws.cell(row=row, column=17, value=item['unit'])  # 子项单位
         row += 1
     
     # 保存文件
