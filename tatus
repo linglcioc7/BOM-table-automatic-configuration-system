@@ -1,0 +1,1131 @@
+[33mtag v1.0[m
+Tagger: BOM系统开发者 <developer@bom-system.com>
+Date:   Sat Aug 16 13:51:54 2025 +0800
+
+版本1.0: BOM生成系统完整功能实现
+
+[33mcommit 620bb60543cca232a62d660d536cdc4a2fb56b77[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;33mtag: [m[1;33mv1.0[m[33m)[m
+Author: BOM系统开发者 <developer@bom-system.com>
+Date:   Sat Aug 16 13:51:42 2025 +0800
+
+    版本1.0: BOM生成系统完整功能实现
+    
+    主要功能:
+    - BOM表生成(支持多配方选择)
+    - 配方管理(增删改查、导入导出)
+    - 批量BOM生成(弹窗表格输入)
+    - 配方批量导出(单表整合格式)
+    - 搜索分页功能
+    - 响应式Web界面
+    
+    技术特点:
+    - Flask + SQLite + Bootstrap 5
+    - 支持Excel导入导出
+    - 局域网部署支持
+    - 完整的错误处理
+
+[1mdiff --git a/.gitignore b/.gitignore[m
+[1mnew file mode 100644[m
+[1mindex 0000000..c80d514[m
+[1m--- /dev/null[m
+[1m+++ b/.gitignore[m
+[36m@@ -0,0 +1,65 @@[m
+[32m+[m[32m# Python[m
+[32m+[m[32m__pycache__/[m
+[32m+[m[32m*.py[cod][m
+[32m+[m[32m*$py.class[m
+[32m+[m[32m*.so[m
+[32m+[m[32m.Python[m
+[32m+[m[32mbuild/[m
+[32m+[m[32mdevelop-eggs/[m
+[32m+[m[32mdist/[m
+[32m+[m[32mdownloads/[m
+[32m+[m[32meggs/[m
+[32m+[m[32m.eggs/[m
+[32m+[m[32mlib/[m
+[32m+[m[32mlib64/[m
+[32m+[m[32mparts/[m
+[32m+[m[32msdist/[m
+[32m+[m[32mvar/[m
+[32m+[m[32mwheels/[m
+[32m+[m[32m*.egg-info/[m
+[32m+[m[32m.installed.cfg[m
+[32m+[m[32m*.egg[m
+[32m+[m[32mMANIFEST[m
+[32m+[m
+[32m+[m[32m# Flask[m
+[32m+[m[32minstance/[m
+[32m+[m[32m.webassets-cache[m
+[32m+[m
+[32m+[m[32m# Database[m
+[32m+[m[32m*.db[m
+[32m+[m[32m*.sqlite[m
+[32m+[m[32m*.sqlite3[m
+[32m+[m
+[32m+[m[32m# Environment variables[m
+[32m+[m[32m.env[m
+[32m+[m[32m.venv[m
+[32m+[m[32menv/[m
+[32m+[m[32mvenv/[m
+[32m+[m[32mENV/[m
+[32m+[m[32menv.bak/[m
+[32m+[m[32mvenv.bak/[m
+[32m+[m
+[32m+[m[32m# IDE[m
+[32m+[m[32m.vscode/[m
+[32m+[m[32m.idea/[m
+[32m+[m[32m*.swp[m
+[32m+[m[32m*.swo[m
+[32m+[m[32m*~[m
+[32m+[m
+[32m+[m[32m# OS[m
+[32m+[m[32m.DS_Store[m
+[32m+[m[32m.DS_Store?[m
+[32m+[m[32m._*[m
+[32m+[m[32m.Spotlight-V100[m
+[32m+[m[32m.Trashes[m
+[32m+[m[32mehthumbs.db[m
+[32m+[m[32mThumbs.db[m
+[32m+[m
+[32m+[m[32m# Temporary files[m
+[32m+[m[32m*.tmp[m
+[32m+[m[32m*.temp[m
+[32m+[m[32m*.log[m
+[32m+[m
+[32m+[m[32m# Excel files (if you want to exclude them)[m
+[32m+[m[32m# *.xlsx[m
+[32m+[m[32m# *.xls[m
+[1mdiff --git a/README.md b/README.md[m
+[1mnew file mode 100644[m
+[1mindex 0000000..129d487[m
+[1m--- /dev/null[m
+[1m+++ b/README.md[m
+[36m@@ -0,0 +1,234 @@[m
+[32m+[m[32m# BOM生成系统[m
+[32m+[m
+[32m+[m[32m一个基于Python Flask的自动BOM（物料清单）表生成系统，支持完整的配方管理和Excel导入导出功能。[m
+[32m+[m
+[32m+[m[32m## 系统特点[m
+[32m+[m
+[32m+[m[32m- 🚀 **自动化生成**：根据配方自动生成标准格式的BOM表[m
+[32m+[m[32m- 📊 **配方管理**：支持配方的增删改查、导入导出[m
+[32m+[m[32m- 📄 **Excel导入导出**：支持配方模板下载、批量导入、配方导出[m
+[32m+[m[32m- 🌐 **Web界面**：基于浏览器的友好用户界面[m
+[32m+[m[32m- 🔧 **易于维护**：配方信息可随时更新和管理[m
+[32m+[m
+[32m+[m[32m## 系统架构[m
+[32m+[m
+[32m+[m[32m- **后端**：Python Flask + SQLAlchemy + SQLite[m
+[32m+[m[32m- **前端**：HTML + JavaScript + Bootstrap 5[m
+[32m+[m[32m- **数据库**：SQLite（轻量级，无需额外安装）[m
+[32m+[m[32m- **文件格式**：Excel (.xlsx)[m
+[32m+[m
+[32m+[m[32m## 安装和运行[m
+[32m+[m
+[32m+[m[32m### 1. 环境要求[m
+[32m+[m[32m- Python 3.7+[m
+[32m+[m[32m- pip包管理器[m
+[32m+[m
+[32m+[m[32m### 2. 安装依赖[m
+[32m+[m[32m```bash[m
+[32m+[m[32mpip install -r requirements.txt[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32m### 3. 运行系统[m
+[32m+[m[32m```bash[m
+[32m+[m[32mpython app.py[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32m### 4. 访问系统[m
+[32m+[m[32m- 主页面：http://localhost:5000[m
+[32m+[m[32m- 管理页面：http://localhost:5000/admin[m
+[32m+[m
+[32m+[m[32m## 功能说明[m
+[32m+[m
+[32m+[m[32m### 主要功能[m
+[32m+[m
+[32m+[m[32m#### 1. BOM表生成[m
+[32m+[m[32m- **父项物料号**：自制产成品的物料编码[m
+[32m+[m[32m- **物料名称**：父件物料的描述名称[m
+[32m+[m[32m- **基本数量**：BOM产品的基本数量[m
+[32m+[m[32m- **基本单位**：BOM产品的基本单位（PCS、KG、M等）[m
+[32m+[m[32m- **配方选择**：选择对应的生产配方[m
+[32m+[m
+[32m+[m[32m#### 2. 配方管理[m
+[32m+[m[32m- **配方添加**：通过Web界面添加新配方[m
+[32m+[m[32m- **配方编辑**：修改现有配方的名称、描述和配方项[m
+[32m+[m[32m- **配方删除**：软删除配方（设置is_active为False）[m
+[32m+[m[32m- **配方查看**：查看配方的详细信息和配方项列表[m
+[32m+[m[32m- **配方导入**：从Excel文件批量导入配方数据[m
+[32m+[m[32m- **配方导出**：将配方导出为Excel格式文件[m
+[32m+[m[32m- **模板下载**：下载标准配方导入模板[m
+[32m+[m
+[32m+[m[32m#### 3. 行号编码规则[m
+[32m+[m[32m- 行号格式：0010、0020、0030...（4位数字文本格式）[m
+[32m+[m[32m- 系统自动生成，用户可手动调整[m
+[32m+[m[32m- 支持自定义行号输入[m
+[32m+[m
+[32m+[m[32m### BOM表字段说明[m
+[32m+[m
+[32m+[m[32m生成的BOM表包含以下17列：[m
+[32m+[m
+[32m+[m[32m| 列 | 字段名称 | 说明 | 默认值 |[m
+[32m+[m[32m|---|----------|------|--------|[m
+[32m+[m[32m| A | 字段名称 | 字段填写说明 | 空 |[m
+[32m+[m[32m| B | 工厂 | 4位工厂代码 | P060 |[m
+[32m+[m[32m| C | BOM可选文本 | 不同可选BOM的文本描述 | 配方描述 |[m
+[32m+[m[32m| D | 父项物料号 | 自制产成品 | 用户输入 |[m
+[32m+[m[32m| E | 物料名称 | 父件物料描述 | 用户输入 |[m
+[32m+[m[32m| F | 生效日期 | BOM生效的开始日期 | 空 |[m
+[32m+[m[32m| G | BOM用途 | 用途标识 | 1 |[m
+[32m+[m[32m| H | 可选BOM | BOM编号（01、02、03...） | 自动生成 |[m
+[32m+[m[32m| I | BOM状态 | 状态标识 | 01 |[m
+[32m+[m[32m| J | 基本数量 | BOM产品的基本数量 | 用户输入 |[m
+[32m+[m[32m| K | 基本单位 | BOM产品的基本单位 | 用户输入 |[m
+[32m+[m[32m| L | 行项目号 | 子件行项目编号 | 配方定义（0010、0020...） |[m
+[32m+[m[32m| M | 项目类别 | 固定值"L"，虚拟件为"N" | L |[m
+[32m+[m[32m| N | 子项物料号 | 组件项的物料编码 | 配方定义 |[m
+[32m+[m[32m| O | 子项物料描述 | 子件物料描述 | 配方定义 |[m
+[32m+[m[32m| P | 子项数量 | 子件物料的用量 | 配方定义 |[m
+[32m+[m[32m| Q | 子项单位 | 子件物料的计量单位 | 配方定义 |[m
+[32m+[m
+[32m+[m[32m## 使用流程[m
+[32m+[m
+[32m+[m[32m### 1. 系统初始化[m
+[32m+[m[32m首次运行系统会自动创建示例数据：[m
+[32m+[m[32m- 示例配方：标准配方1（包含2个配方项）[m
+[32m+[m
+[32m+[m[32m### 2. 配方管理[m
+[32m+[m[32m1. 访问管理页面：`/admin`[m
+[32m+[m[32m2. **添加配方**：点击"添加配方"按钮，填写配方信息[m
+[32m+[m[32m3. **编辑配方**：点击"编辑"按钮修改现有配方[m
+[32m+[m[32m4. **删除配方**：点击"删除"按钮删除配方[m
+[32m+[m[32m5. **导入配方**：下载模板，填写数据后上传[m
+[32m+[m[32m6. **导出配方**：将配方导出为Excel文件[m
+[32m+[m
+[32m+[m[32m### 3. 生成BOM表[m
+[32m+[m[32m1. 在主页面填写BOM信息[m
+[32m+[m[32m2. 选择对应的配方[m
+[32m+[m[32m3. 点击"生成BOM表"[m
+[32m+[m[32m4. 系统自动生成Excel文件并下载[m
+[32m+[m
+[32m+[m[32m## 配方导入导出[m
+[32m+[m
+[32m+[m[32m### 导入模板格式[m
+[32m+[m[32mExcel模板包含以下列：[m
+[32m+[m[32m- **行号**：配方项的行号（如0010、0020）[m
+[32m+[m[32m- **物料编码**：物料的编码[m
+[32m+[m[32m- **物料名称**：物料的名称[m
+[32m+[m[32m- **数量**：物料的数量[m
+[32m+[m[32m- **单位**：物料的单位（PCS、KG、M等）[m
+[32m+[m[32m- **类别**：项目类别（L或N）[m
+[32m+[m
+[32m+[m[32m### 导入步骤[m
+[32m+[m[32m1. 下载配方导入模板[m
+[32m+[m[32m2. 按照模板格式填写数据[m
+[32m+[m[32m3. 在管理页面点击"导入配方"[m
+[32m+[m[32m4. 填写配方名称和描述[m
+[32m+[m[32m5. 选择Excel文件并上传[m
+[32m+[m
+[32m+[m[32m### 导出功能[m
+[32m+[m[32m- 支持将单个配方导出为Excel文件[m
+[32m+[m[32m- 导出文件包含配方基本信息和配方项列表[m
+[32m+[m[32m- 便于配方数据的备份和分享[m
+[32m+[m
+[32m+[m[32m## 局域网部署[m
+[32m+[m
+[32m+[m[32m### 1. 修改运行配置[m
+[32m+[m[32m在`app.py`中修改运行参数：[m
+[32m+[m[32m```python[m
+[32m+[m[32mapp.run(host='0.0.0.0', port=5000, debug=False)[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32m### 2. 防火墙设置[m
+[32m+[m[32m确保Windows防火墙允许5000端口的入站连接[m
+[32m+[m
+[32m+[m[32m### 3. 访问方式[m
+[32m+[m[32m局域网内其他用户可通过以下地址访问：[m
+[32m+[m[32m```[m
+[32m+[m[32mhttp://[服务器IP]:5000[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32m### 4. 生产环境建议[m
+[32m+[m[32m- 使用Gunicorn或uWSGI作为WSGI服务器[m
+[32m+[m[32m- 配置Nginx作为反向代理[m
+[32m+[m[32m- 启用HTTPS[m
+[32m+[m[32m- 设置适当的访问控制[m
+[32m+[m
+[32m+[m[32m## 技术特点[m
+[32m+[m
+[32m+[m[32m### 1. 数据模型[m
+[32m+[m[32m- **Recipe**：配方主表（包含创建和更新时间）[m
+[32m+[m[32m- **RecipeItem**：配方项目表[m
+[32m+[m[32m- **BOMRequest**：BOM生成记录表[m
+[32m+[m
+[32m+[m[32m### 2. API接口[m
+[32m+[m[32m- `GET /api/recipes`：获取配方列表[m
+[32m+[m[32m- `GET /api/recipe/<id>`：获取配方详情[m
+[32m+[m[32m- `POST /api/recipe`：创建新配方[m
+[32m+[m[32m- `PUT /api/recipe/<id>`：更新配方[m
+[32m+[m[32m- `DELETE /api/recipe/<id>`：删除配方[m
+[32m+[m[32m- `GET /api/recipe/template`：下载导入模板[m
+[32m+[m[32m- `POST /api/recipe/import`：导入配方[m
+[32m+[m[32m- `GET /api/recipe/export/<id>`：导出配方[m
+[32m+[m[32m- `POST /api/generate_bom`：生成BOM表[m
+[32m+[m
+[32m+[m[32m### 3. 文件处理[m
+[32m+[m[32m- 使用openpyxl库处理Excel文件[m
+[32m+[m[32m- 支持样式设置（字体、对齐、边框等）[m
+[32m+[m[32m- 临时文件管理[m
+[32m+[m[32m- 文件上传和下载[m
+[32m+[m
+[32m+[m[32m## 扩展功能[m
+[32m+[m
+[32m+[m[32m### 1. 批量操作[m
+[32m+[m[32m- 支持Excel批量导入配方[m
+[32m+[m[32m- 支持配方批量导出[m
+[32m+[m[32m- 支持配方模板管理[m
+[32m+[m
+[32m+[m[32m### 2. 用户权限[m
+[32m+[m[32m- 管理员和普通用户角色[m
+[32m+[m[32m- 配方访问权限控制[m
+[32m+[m
+[32m+[m[32m### 3. 数据备份[m
+[32m+[m[32m- 数据库自动备份[m
+[32m+[m[32m- 配方版本管理[m
+[32m+[m[32m- 配方导入导出备份[m
+[32m+[m
+[32m+[m[32m### 4. 报表功能[m
+[32m+[m[32m- BOM使用统计[m
+[32m+[m[32m- 配方使用分析[m
+[32m+[m[32m- 配方项统计报表[m
+[32m+[m
+[32m+[m[32m## 故障排除[m
+[32m+[m
+[32m+[m[32m### 常见问题[m
+[32m+[m
+[32m+[m[32m1. **端口被占用**[m
+[32m+[m[32m   - 修改`app.py`中的端口号[m
+[32m+[m[32m   - 检查是否有其他服务占用5000端口[m
+[32m+[m
+[32m+[m[32m2. **依赖安装失败**[m
+[32m+[m[32m   - 升级pip：`python -m pip install --upgrade pip`[m
+[32m+[m[32m   - 使用国内镜像源：`pip install -i https://pypi.tuna.tsinghua.edu.cn/simple/ -r requirements.txt`[m
+[32m+[m
+[32m+[m[32m3. **数据库错误**[m
+[32m+[m[32m   - 删除`bom_system.db`文件重新运行[m
+[32m+[m[32m   - 检查SQLite是否正常工作[m
+[32m+[m
+[32m+[m[32m4. **Excel文件无法下载**[m
+[32m+[m[32m   - 检查临时文件权限[m
+[32m+[m[32m   - 确认openpyxl库安装正确[m
+[32m+[m
+[32m+[m[32m5. **配方导入失败**[m
+[32m+[m[32m   - 检查Excel文件格式是否正确[m
+[32m+[m[32m   - 确认必填字段已填写[m
+[32m+[m[32m   - 检查文件编码是否为UTF-8[m
+[32m+[m
+[32m+[m[32m## 联系支持[m
+[32m+[m
+[32m+[m[32m如有问题或建议，请联系系统管理员。[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m**版本**：1.0.0[m[41m  [m
+[32m+[m[32m**更新日期**：2024年8月[m[41m  [m
+[32m+[m[32m**开发语言**：Python 3.7+[m[41m  [m
+[32m+[m[32m**框架**：Flask 2.3.3[m
+[1mdiff --git a/app.py b/app.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..16911fc[m
+[1m--- /dev/null[m
+[1m+++ b/app.py[m
+[36m@@ -0,0 +1,658 @@[m
+[32m+[m[32mfrom flask import Flask, render_template, request, jsonify, send_file[m
+[32m+[m[32mfrom flask_sqlalchemy import SQLAlchemy[m
+[32m+[m[32mfrom datetime import datetime[m
+[32m+[m[32mimport openpyxl[m
+[32m+[m[32mfrom openpyxl.styles import Font, Alignment, Border, Side[m
+[32m+[m[32mimport os[m
+[32m+[m[32mimport tempfile[m
+[32m+[m[32mimport uuid[m
+[32m+[m
+[32m+[m[32mapp = Flask(__name__)[m
+[32m+[m[32mapp.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///bom_system.db'[m
+[32m+[m[32mapp.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False[m
+[32m+[m[32mdb = SQLAlchemy(app)[m
+[32m+[m
+[32m+[m[32m# 数据模型[m
+[32m+[m[32mclass Recipe(db.Model):[m
+[32m+[m[32m    id = db.Column(db.Integer, primary_key=True)[m
+[32m+[m[32m    recipe_name = db.Column(db.String(100), nullable=False)[m
+[32m+[m[32m    description = db.Column(db.Text)[m
+[32m+[m[32m    is_active = db.Column(db.Boolean, default=True)[m
+[32m+[m[32m    created_at = db.Column(db.DateTime, default=datetime.utcnow)[m
+[32m+[m[32m    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)[m
+[32m+[m
+[32m+[m[32mclass RecipeItem(db.Model):[m
+[32m+[m[32m    id = db.Column(db.Integer, primary_key=True)[m
+[32m+[m[32m    recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), nullable=False)[m
+[32m+[m[32m    material_code = db.Column(db.String(50), nullable=False)[m
+[32m+[m[32m    material_name = db.Column(db.String(200), nullable=False)[m
+[32m+[m[32m    quantity = db.Column(db.Float, nullable=False)[m
+[32m+[m[32m    unit = db.Column(db.String(20), nullable=False)[m
+[32m+[m[32m    line_number = db.Column(db.String(10), nullable=False)  # 改为字符串格式[m
+[32m+[m[32m    project_category = db.Column(db.String(10), default='L')[m
+[32m+[m
+[32m+[m[32mclass BOMRequest(db.Model):[m
+[32m+[m[32m    id = db.Column(db.Integer, primary_key=True)[m
+[32m+[m[32m    parent_material_code = db.Column(db.String(50), nullable=False)[m
+[32m+[m[32m    parent_material_name = db.Column(db.String(200), nullable=False)[m
+[32m+[m[32m    basic_quantity = db.Column(db.Float, nullable=False)[m
+[32m+[m[32m    basic_unit = db.Column(db.String(20), nullable=False)[m
+[32m+[m[32m    recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), nullable=False)[m
+[32m+[m[32m    created_at = db.Column(db.DateTime, default=datetime.utcnow)[m
+[32m+[m
+[32m+[m[32m@app.route('/')[m
+[32m+[m[32mdef index():[m
+[32m+[m[32m    return render_template('index.html')[m
+[32m+[m
+[32m+[m[32m@app.route('/api/recipes')[m
+[32m+[m[32mdef get_recipes():[m
+[32m+[m[32m    recipes = Recipe.query.filter_by(is_active=True).all()[m
+[32m+[m[32m    return jsonify([{[m
+[32m+[m[32m        'id': r.id,[m
+[32m+[m[32m        'name': r.recipe_name,[m
+[32m+[m[32m        'description': r.description,[m
+[32m+[m[32m        'created_at': r.created_at.strftime('%Y-%m-%d %H:%M:%S') if r.created_at else '',[m
+[32m+[m[32m        'updated_at': r.updated_at.strftime('%Y-%m-%d %H:%M:%S') if r.updated_at else ''[m
+[32m+[m[32m    } for r in recipes])[m
+[32m+[m
+[32m+[m[32m@app.route('/api/recipe/<int:recipe_id>')[m
+[32m+[m[32mdef get_recipe_items(recipe_id):[m
+[32m+[m[32m    items = RecipeItem.query.filter_by(recipe_id=recipe_id).order_by(RecipeItem.line_number).all()[m
+[32m+[m[32m    return jsonify([{[m
+[32m+[m[32m        'id': item.id,[m
+[32m+[m[32m        'material_code': item.material_code,[m
+[32m+[m[32m        'material_name': item.material_name,[m
+[32m+[m[32m        'quantity': item.quantity,[m
+[32m+[m[32m        'unit': item.unit,[m
+[32m+[m[32m        'line_number': item.line_number,[m
+[32m+[m[32m        'project_category': item.project_category[m
+[32m+[m[32m    } for item in items])[m
+[32m+[m
+[32m+[m[32m@app.route('/api/recipe/<int:recipe_id>', methods=['PUT'])[m
+[32m+[m[32mdef update_recipe(recipe_id):[m
+[32m+[m[32m    data = request.json[m
+[32m+[m[32m    recipe = Recipe.query.get(recipe_id)[m
+[32m+[m[32m    if not recipe:[m
+[32m+[m[32m        return jsonify({'success': False, 'message': '配方不存在'}), 404[m
+[32m+[m[41m    [m
+[32m+[m[32m    recipe.recipe_name = data['name'][m
+[32m+[m[32m    recipe.description = data['description'][m
+[32m+[m[32m    recipe.updated_at = datetime.utcnow()[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 删除旧的配方项[m
+[32m+[m[32m    RecipeItem.query.filter_by(recipe_id=recipe_id).delete()[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 添加新的配方项[m
+[32m+[m[32m    for item in data['items']:[m
+[32m+[m[32m        recipe_item = RecipeItem([m
+[32m+[m[32m            recipe_id=recipe.id,[m
+[32m+[m[32m            material_code=item['material_code'],[m
+[32m+[m[32m            material_name=item['material_name'],[m
+[32m+[m[32m            quantity=item['quantity'],[m
+[32m+[m[32m            unit=item['unit'],[m
+[32m+[m[32m            line_number=item['line_number'],[m
+[32m+[m[32m            project_category=item['project_category'][m
+[32m+[m[32m        )[m
+[32m+[m[32m        db.session.add(recipe_item)[m
+[32m+[m[41m    [m
+[32m+[m[32m    db.session.commit()[m
+[32m+[m[32m    return jsonify({'success': True, 'message': '配方更新成功'})[m
+[32m+[m
+[32m+[m[32m@app.route('/api/recipe/<int:recipe_id>', methods=['DELETE'])[m
+[32m+[m[32mdef delete_recipe(recipe_id):[m
+[32m+[m[32m    recipe = Recipe.query.get(recipe_id)[m
+[32m+[m[32m    if not recipe:[m
+[32m+[m[32m        return jsonify({'success': False, 'message': '配方不存在'}), 404[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 软删除：设置is_active为False[m
+[32m+[m[32m    recipe.is_active = False[m
+[32m+[m[32m    db.session.commit()[m
+[32m+[m[41m    [m
+[32m+[m[32m    return jsonify({'success': True, 'message': '配方删除成功'})[m
+[32m+[m
+[32m+[m[32m@app.route('/api/generate_bom', methods=['POST'])[m
+[32m+[m[32mdef generate_bom():[m
+[32m+[m[32m    data = request.json[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 创建BOM请求记录[m
+[32m+[m[32m    bom_request = BOMRequest([m
+[32m+[m[32m        parent_material_code=data['parent_material_code'],[m
+[32m+[m[32m        parent_material_name=data['parent_material_name'],[m
+[32m+[m[32m        basic_quantity=data['basic_quantity'],[m
+[32m+[m[32m        basic_unit=data['basic_unit'],[m
+[32m+[m[32m        recipe_id=data['recipe_id'][m
+[32m+[m[32m    )[m
+[32m+[m[32m    db.session.add(bom_request)[m
+[32m+[m[32m    db.session.commit()[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 获取配方信息[m
+[32m+[m[32m    recipe = Recipe.query.get(data['recipe_id'])[m
+[32m+[m[32m    items = RecipeItem.query.filter_by(recipe_id=data['recipe_id']).order_by(RecipeItem.line_number).all()[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 生成Excel文件[m
+[32m+[m[32m    wb = openpyxl.Workbook()[m
+[32m+[m[32m    ws = wb.active[m
+[32m+[m[32m    ws.title = "BOM表"[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 设置列宽[m
+[32m+[m[32m    column_widths = [15, 10, 20, 20, 30, 15, 10, 10, 10, 15, 15, 15, 20, 30, 15, 15][m
+[32m+[m[32m    for i, width in enumerate(column_widths, 1):[m
+[32m+[m[32m        ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = width[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 表头[m
+[32m+[m[32m    headers = ['字段名称', '工厂', 'BOM可选文本', '父项物料号', '物料名称', '生效日期',[m[41m [m
+[32m+[m[32m               'BOM用途', '可选BOM', 'BOM状态', '基本数量', '基本单位', '行项目号',[m[41m [m
+[32m+[m[32m               '项目类别', '子项物料号', '子项物料描述', '子项数量', '子项单位'][m
+[32m+[m[41m    [m
+[32m+[m[32m    for col, header in enumerate(headers, 1):[m
+[32m+[m[32m        cell = ws.cell(row=1, column=col, value=header)[m
+[32m+[m[32m        cell.font = Font(bold=True)[m
+[32m+[m[32m        cell.alignment = Alignment(horizontal='center', vertical='center')[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 数据行[m
+[32m+[m[32m    row = 2[m
+[32m+[m[32m    for i, item in enumerate(items):[m
+[32m+[m[32m        # 父项行（只在第一个子项时显示）[m
+[32m+[m[32m        if i == 0:[m
+[32m+[m[32m            ws.cell(row=row, column=1, value='')  # 字段名称[m
+[32m+[m[32m            ws.cell(row=row, column=2, value='P060')  # 工厂[m
+[32m+[m[32m            ws.cell(row=row, column=3, value=recipe.description)  # BOM可选文本[m
+[32m+[m[32m            ws.cell(row=row, column=4, value=data['parent_material_code'])  # 父项物料号[m
+[32m+[m[32m            ws.cell(row=row, column=5, value=data['parent_material_name'])  # 物料名称[m
+[32m+[m[32m            ws.cell(row=row, column=6, value='')  # 生效日期[m
+[32m+[m[32m            ws.cell(row=row, column=7, value='1')  # BOM用途[m
+[32m+[m[32m            ws.cell(row=row, column=8, value=f"{i+1:02d}")  # 可选BOM[m
+[32m+[m[32m            ws.cell(row=row, column=9, value='01')  # BOM状态[m
+[32m+[m[32m            ws.cell(row=row, column=10, value=data['basic_quantity'])  # 基本数量[m
+[32m+[m[32m            ws.cell(row=row, column=11, value=data['basic_unit'])  # 基本单位[m
+[32m+[m[32m            ws.cell(row=row, column=12, value='')  # 行项目号[m
+[32m+[m[32m            ws.cell(row=row, column=13, value='')  # 项目类别[m
+[32m+[m[32m            ws.cell(row=row, column=14, value='')  # 子项物料号[m
+[32m+[m[32m            ws.cell(row=row, column=15, value='')  # 子项物料描述[m
+[32m+[m[32m            ws.cell(row=row, column=16, value='')  # 子项数量[m
+[32m+[m[32m            ws.cell(row=row, column=17, value='')  # 子项单位[m
+[32m+[m[32m            row += 1[m
+[32m+[m[41m        [m
+[32m+[m[32m        # 子项行[m
+[32m+[m[32m        ws.cell(row=row, column=1, value='')  # 字段名称[m
+[32m+[m[32m        ws.cell(row=row, column=2, value='P060')  # 工厂[m
+[32m+[m[32m        ws.cell(row=row, column=3, value='')  # BOM可选文本[m
+[32m+[m[32m        ws.cell(row=row, column=4, value='')  # 父项物料号[m
+[32m+[m[32m        ws.cell(row=row, column=5, value='')  # 物料名称[m
+[32m+[m[32m        ws.cell(row=row, column=6, value='')  # 生效日期[m
+[32m+[m[32m        ws.cell(row=row, column=7, value='')  # BOM用途[m
+[32m+[m[32m        ws.cell(row=row, column=8, value='')  # 可选BOM[m
+[32m+[m[32m        ws.cell(row=row, column=9, value='')  # BOM状态[m
+[32m+[m[32m        ws.cell(row=row, column=10, value='')  # 基本数量[m
+[32m+[m[32m        ws.cell(row=row, column=11, value='')  # 基本单位[m
+[32m+[m[32m        ws.cell(row=row, column=12, value=item.line_number)  # 行项目号（直接使用字符串）[m
+[32m+[m[32m        ws.cell(row=row, column=13, value=item.project_category)  # 项目类别[m
+[32m+[m[32m        ws.cell(row=row, column=14, value=item.material_code)  # 子项物料号[m
+[32m+[m[32m        ws.cell(row=row, column=15, value=item.material_name)  # 子项物料描述[m
+[32m+[m[32m        ws.cell(row=row, column=16, value=item.quantity)  # 子项数量[m
+[32m+[m[32m        ws.cell(row=row, column=17, value=item.unit)  # 子项单位[m
+[32m+[m[32m        row += 1[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 保存文件[m
+[32m+[m[32m    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')[m
+[32m+[m[32m    wb.save(temp_file.name)[m
+[32m+[m[32m    temp_file.close()[m
+[32m+[m[41m    [m
+[32m+[m[32m    return jsonify({[m
+[32m+[m[32m        'success': True,[m
+[32m+[m[32m        'message': 'BOM表生成成功',[m
+[32m+[m[32m        'file_path': temp_file.name[m
+[32m+[m[32m    })[m
+[32m+[m
+[32m+[m[32m@app.route('/api/download_bom/<path:file_path>')[m
+[32m+[m[32mdef download_bom(file_path):[m
+[32m+[m[32m    try:[m
+[32m+[m[32m        return send_file(file_path, as_attachment=True, download_name='BOM表.xlsx')[m
+[32m+[m[32m    except Exception as e:[m
+[32m+[m[32m        return jsonify({'error': str(e)}), 400[m
+[32m+[m
+[32m+[m[32m@app.route('/admin')[m
+[32m+[m[32mdef admin():[m
+[32m+[m[32m    return render_template('admin.html')[m
+[32m+[m
+[32m+[m[32m@app.route('/api/recipe', methods=['POST'])[m
+[32m+[m[32mdef create_recipe():[m
+[32m+[m[32m    data = request.json[m
+[32m+[m[32m    recipe = Recipe([m
+[32m+[m[32m        recipe_name=data['name'],[m
+[32m+[m[32m        description=data['description'][m
+[32m+[m[32m    )[m
+[32m+[m[32m    db.session.add(recipe)[m
+[32m+[m[32m    db.session.commit()[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 添加配方项[m
+[32m+[m[32m    for item in data['items']:[m
+[32m+[m[32m        recipe_item = RecipeItem([m
+[32m+[m[32m            recipe_id=recipe.id,[m
+[32m+[m[32m            material_code=item['material_code'],[m
+[32m+[m[32m            material_name=item['material_name'],[m
+[32m+[m[32m            quantity=item['quantity'],[m
+[32m+[m[32m            unit=item['unit'],[m
+[32m+[m[32m            line_number=item['line_number'],[m
+[32m+[m[32m            project_category=item['project_category'][m
+[32m+[m[32m        )[m
+[32m+[m[32m        db.session.add(recipe_item)[m
+[32m+[m[41m    [m
+[32m+[m[32m    db.session.commit()[m
+[32m+[m[32m    return jsonify({'success': True, 'id': recipe.id})[m
+[32m+[m
+[32m+[m[32m@app.route('/api/recipe/template')[m
+[32m+[m[32mdef download_recipe_template():[m
+[32m+[m[32m    """下载配方导入模板"""[m
+[32m+[m[32m    wb = openpyxl.Workbook()[m
+[32m+[m[32m    ws = wb.active[m
+[32m+[m[32m    ws.title = "配方导入模板"[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 设置列宽[m
+[32m+[m[32m    column_widths = [15, 20, 30, 15, 15, 15][m
+[32m+[m[32m    for i, width in enumerate(column_widths, 1):[m
+[32m+[m[32m        ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = width[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 表头[m
+[32m+[m[32m    headers = ['行号', '物料编码', '物料名称', '数量', '单位', '类别'][m
+[32m+[m[32m    for col, header in enumerate(headers, 1):[m
+[32m+[m[32m        cell = ws.cell(row=1, column=col, value=header)[m
+[32m+[m[32m        cell.font = Font(bold=True)[m
+[32m+[m[32m        cell.alignment = Alignment(horizontal='center', vertical='center')[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 示例数据[m
+[32m+[m[32m    example_data = [[m
+[32m+[m[32m        ['0010', 'M001', '原材料A', 2.5, 'KG', 'L'],[m
+[32m+[m[32m        ['0020', 'M002', '原材料B', 5, 'PCS', 'L'],[m
+[32m+[m[32m        ['0030', 'M003', '原材料C', 1.5, 'M', 'L'][m
+[32m+[m[32m    ][m
+[32m+[m[41m    [m
+[32m+[m[32m    for row_idx, row_data in enumerate(example_data, 2):[m
+[32m+[m[32m        for col_idx, value in enumerate(row_data, 1):[m
+[32m+[m[32m            ws.cell(row=row_idx, column=col_idx, value=value)[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 保存文件[m
+[32m+[m[32m    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')[m
+[32m+[m[32m    wb.save(temp_file.name)[m
+[32m+[m[32m    temp_file.close()[m
+[32m+[m[41m    [m
+[32m+[m[32m    return send_file(temp_file.name, as_attachment=True, download_name='配方导入模板.xlsx')[m
+[32m+[m
+[32m+[m[32m@app.route('/api/recipe/import', methods=['POST'])[m
+[32m+[m[32mdef import_recipe():[m
+[32m+[m[32m    """导入配方"""[m
+[32m+[m[32m    if 'file' not in request.files:[m
+[32m+[m[32m        return jsonify({'success': False, 'message': '没有选择文件'}), 400[m
+[32m+[m[41m    [m
+[32m+[m[32m    file = request.files['file'][m
+[32m+[m[32m    if file.filename == '':[m
+[32m+[m[32m        return jsonify({'success': False, 'message': '没有选择文件'}), 400[m
+[32m+[m[41m    [m
+[32m+[m[32m    try:[m
+[32m+[m[32m        # 读取Excel文件[m
+[32m+[m[32m        wb = openpyxl.load_workbook(file)[m
+[32m+[m[32m        ws = wb.active[m
+[32m+[m[41m        [m
+[32m+[m[32m        # 获取配方名称和描述[m
+[32m+[m[32m        recipe_name = request.form.get('recipe_name', '导入的配方')[m
+[32m+[m[32m        recipe_description = request.form.get('recipe_description', '从Excel导入的配方')[m
+[32m+[m[41m        [m
+[32m+[m[32m        # 创建配方[m
+[32m+[m[32m        recipe = Recipe([m
+[32m+[m[32m            recipe_name=recipe_name,[m
+[32m+[m[32m            description=recipe_description[m
+[32m+[m[32m        )[m
+[32m+[m[32m        db.session.add(recipe)[m
+[32m+[m[32m        db.session.commit()[m
+[32m+[m[41m        [m
+[32m+[m[32m        # 读取配方项[m
+[32m+[m[32m        items = [][m
+[32m+[m[32m        for row in range(2, ws.max_row + 1):  # 从第2行开始（跳过表头）[m
+[32m+[m[32m            line_number = ws.cell(row=row, column=1).value[m
+[32m+[m[32m            material_code = ws.cell(row=row, column=2).value[m
+[32m+[m[32m            material_name = ws.cell(row=row, column=3).value[m
+[32m+[m[32m            quantity = ws.cell(row=row, column=4).value[m
+[32m+[m[32m            unit = ws.cell(row=row, column=5).value[m
+[32m+[m[32m            project_category = ws.cell(row=row, column=6).value or 'L'[m
+[32m+[m[41m            [m
+[32m+[m[32m            if all([line_number, material_code, material_name, quantity, unit]):[m
+[32m+[m[32m                recipe_item = RecipeItem([m
+[32m+[m[32m                    recipe_id=recipe.id,[m
+[32m+[m[32m                    material_code=str(material_code),[m
+[32m+[m[32m                    material_name=str(material_name),[m
+[32m+[m[32m                    quantity=float(quantity),[m
+[32m+[m[32m                    unit=str(unit),[m
+[32m+[m[32m                    line_number=str(line_number),[m
+[32m+[m[32m                    project_category=str(project_category)[m
+[32m+[m[32m                )[m
+[32m+[m[32m                db.session.add(recipe_item)[m
+[32m+[m[32m                items.append(recipe_item)[m
+[32m+[m[41m        [m
+[32m+[m[32m        db.session.commit()[m
+[32m+[m[41m        [m
+[32m+[m[32m        return jsonify({[m
+[32m+[m[32m            'success': True,[m[41m [m
+[32m+[m[32m            'message': f'配方导入成功，共导入 {len(items)} 个配方项',[m
+[32m+[m[32m            'recipe_id': recipe.id[m
+[32m+[m[32m        })[m
+[32m+[m[41m        [m
+[32m+[m[32m    except Exception as e:[m
+[32m+[m[32m        db.session.rollback()[m
+[32m+[m[32m        return jsonify({'success': False, 'message': f'导入失败：{str(e)}'}), 400[m
+[32m+[m
+[32m+[m[32m@app.route('/api/recipe/export/<int:recipe_id>')[m
+[32m+[m[32mdef export_recipe(recipe_id):[m
+[32m+[m[32m    """导出配方到Excel"""[m
+[32m+[m[32m    recipe = Recipe.query.get(recipe_id)[m
+[32m+[m[32m    if not recipe:[m
+[32m+[m[32m        return jsonify({'success': False, 'message': '配方不存在'}), 404[m
+[32m+[m[41m    [m
+[32m+[m[32m    items = RecipeItem.query.filter_by(recipe_id=recipe_id).order_by(RecipeItem.line_number).all()[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 创建Excel文件[m
+[32m+[m[32m    wb = openpyxl.Workbook()[m
+[32m+[m[32m    ws = wb.active[m
+[32m+[m[32m    # 过滤sheet名称中的无效字符[m
+[32m+[m[32m    safe_title = "".join(c for c in recipe.recipe_name if c not in r'\/:*?"<>|')[m
+[32m+[m[32m    ws.title = safe_title[:31] if len(safe_title) > 31 else safe_title  # Excel sheet名称最大31字符[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 设置列宽[m
+[32m+[m[32m    column_widths = [15, 20, 30, 15, 15, 15][m
+[32m+[m[32m    for i, width in enumerate(column_widths, 1):[m
+[32m+[m[32m        ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = width[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 配方信息[m
+[32m+[m[32m    ws.cell(row=1, column=1, value='配方名称：')[m
+[32m+[m[32m    ws.cell(row=1, column=2, value=recipe.recipe_name)[m
+[32m+[m[32m    ws.cell(row=2, column=1, value='配方描述：')[m
+[32m+[m[32m    ws.cell(row=2, column=2, value=recipe.description or '')[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 表头[m
+[32m+[m[32m    headers = ['行号', '物料编码', '物料名称', '数量', '单位', '类别'][m
+[32m+[m[32m    for col, header in enumerate(headers, 1):[m
+[32m+[m[32m        cell = ws.cell(row=4, column=col, value=header)[m
+[32m+[m[32m        cell.font = Font(bold=True)[m
+[32m+[m[32m        cell.alignment = Alignment(horizontal='center', vertical='center')[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 配方项数据[m
+[32m+[m[32m    for row_idx, item in enumerate(items, 5):[m
+[32m+[m[32m        ws.cell(row=row_idx, column=1, value=item.line_number)[m
+[32m+[m[32m        ws.cell(row=row_idx, column=2, value=item.material_code)[m
+[32m+[m[32m        ws.cell(row=row_idx, column=3, value=item.material_name)[m
+[32m+[m[32m        ws.cell(row=row_idx, column=4, value=item.quantity)[m
+[32m+[m[32m        ws.cell(row=row_idx, column=5, value=item.unit)[m
+[32m+[m[32m        ws.cell(row=row_idx, column=6, value=item.project_category)[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 保存文件[m
+[32m+[m[32m    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')[m
+[32m+[m[32m    wb.save(temp_file.name)[m
+[32m+[m[32m    temp_file.close()[m
+[32m+[m[41m    [m
+[32m+[m[32m    return send_file(temp_file.name, as_attachment=True, download_name=f'{recipe.recipe_name}.xlsx')[m
+[32m+[m
+[32m+[m[32m@app.route('/api/recipe/export_all')[m
+[32m+[m[32mdef export_all_recipes():[m
+[32m+[m[32m    """批量导出所有配方到单个表格"""[m
+[32m+[m[32m    try:[m
+[32m+[m[32m        # 获取所有活跃的配方[m
+[32m+[m[32m        recipes = Recipe.query.filter_by(is_active=True).order_by(Recipe.recipe_name).all()[m
+[32m+[m[41m        [m
+[32m+[m[32m        if not recipes:[m
+[32m+[m[32m            return jsonify({'error': '没有找到可导出的配方'}), 404[m
+[32m+[m[41m        [m
+[32m+[m[32m        # 创建工作簿[m
+[32m+[m[32m        wb = openpyxl.Workbook()[m
+[32m+[m[32m        ws = wb.active[m
+[32m+[m[32m        ws.title = "所有配方"[m
+[32m+[m[41m        [m
+[32m+[m[32m        # 设置列宽[m
+[32m+[m[32m        column_widths = [20, 40, 15, 20, 30, 15, 15, 20][m
+[32m+[m[32m        for i, width in enumerate(column_widths, 1):[m
+[32m+[m[32m            ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = width[m
+[32m+[m[41m        [m
+[32m+[m[32m        # 表头 A-H列：配方名称、配方描述、行号、物料编码、物料名称、数量、单位、类别[m
+[32m+[m[32m        headers = ['配方名称', '配方描述', '行号', '物料编码', '物料名称', '数量', '单位', '类别'][m
+[32m+[m[32m        for col, header in enumerate(headers, 1):[m
+[32m+[m[32m            cell = ws.cell(row=1, column=col, value=header)[m
+[32m+[m[32m            cell.font = Font(bold=True)[m
+[32m+[m[32m            cell.alignment = Alignment(horizontal='center', vertical='center')[m
+[32m+[m[41m        [m
+[32m+[m[32m        # 数据行[m
+[32m+[m[32m        row = 2[m
+[32m+[m[32m        for recipe in recipes:[m
+[32m+[m[32m            # 获取配方项[m
+[32m+[m[32m            items = RecipeItem.query.filter_by(recipe_id=recipe.id).order_by(RecipeItem.line_number).all()[m
+[32m+[m[41m            [m
+[32m+[m[32m            # 为每个配方项创建一行数据[m
+[32m+[m[32m            for item in items:[m
+[32m+[m[32m                ws.cell(row=row, column=1, value=recipe.recipe_name)  # A列：配方名称[m
+[32m+[m[32m                ws.cell(row=row, column=2, value=recipe.description or '')  # B列：配方描述[m
+[32m+[m[32m                ws.cell(row=row, column=3, value=item.line_number)  # C列：行号[m
+[32m+[m[32m                ws.cell(row=row, column=4, value=item.material_code)  # D列：物料编码[m
+[32m+[m[32m                ws.cell(row=row, column=5, value=item.material_name)  # E列：物料名称[m
+[32m+[m[32m                ws.cell(row=row, column=6, value=item.quantity)  # F列：数量[m
+[32m+[m[32m                ws.cell(row=row, column=7, value=item.unit)  # G列：单位[m
+[32m+[m[32m                ws.cell(row=row, column=8, value=item.project_category)  # H列：类别[m
+[32m+[m[32m                row += 1[m
+[32m+[m[41m        [m
+[32m+[m[32m        # 保存文件[m
+[32m+[m[32m        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')[m
+[32m+[m[32m        wb.save(temp_file.name)[m
+[32m+[m[32m        temp_file.close()[m
+[32m+[m[41m        [m
+[32m+[m[32m        return send_file(temp_file.name, as_attachment=True, download_name='所有配方.xlsx')[m
+[32m+[m[41m        [m
+[32m+[m[32m    except Exception as e:[m
+[32m+[m[32m        return jsonify({'error': str(e)}), 400[m
+[32m+[m
+[32m+[m
+[32m+[m
+[32m+[m
+[32m+[m
+[32m+[m[32m@app.route('/api/download_batch_bom/<path:file_path>')[m
+[32m+[m[32mdef download_batch_bom(file_path):[m
+[32m+[m[32m    """下载批量生成的BOM文件"""[m
+[32m+[m[32m    try:[m
+[32m+[m[32m        # 修复文件路径问题[m
+[32m+[m[32m        if file_path.startswith('C:'):[m
+[32m+[m[32m            # 处理Windows路径[m
+[32m+[m[32m            file_path = file_path.replace('C:', 'C:\\')[m
+[32m+[m[32m        elif file_path.startswith('C%3A'):[m
+[32m+[m[32m            # 处理URL编码的路径[m
+[32m+[m[32m            file_path = file_path.replace('C%3A', 'C:\\')[m
+[32m+[m[41m        [m
+[32m+[m[32m        # 确保文件存在[m
+[32m+[m[32m        if not os.path.exists(file_path):[m
+[32m+[m[32m            return jsonify({'error': '文件不存在'}), 404[m
+[32m+[m[41m            [m
+[32m+[m[32m        return send_file(file_path, as_attachment=True, download_name='批量BOM表.xlsx')[m
+[32m+[m[32m    except Exception as e:[m
+[32m+[m[32m        return jsonify({'error': str(e)}), 400[m
+[32m+[m
+[32m+[m[32m@app.route('/api/bom/batch_generate_table', methods=['POST'])[m
+[32m+[m[32mdef batch_generate_bom_from_table():[m
+[32m+[m[32m    """从弹窗表格数据批量生成BOM"""[m
+[32m+[m[32m    try:[m
+[32m+[m[32m        data = request.json[m
+[32m+[m[32m        bom_data = data.get('bom_data', [])[m
+[32m+[m[41m        [m
+[32m+[m[32m        if not bom_data:[m
+[32m+[m[32m            return jsonify({'success': False, 'message': '没有提供BOM数据'}), 400[m
+[32m+[m[41m        [m
+[32m+[m[32m        bom_items = [][m
+[32m+[m[32m        errors = [][m
+[32m+[m[41m        [m
+[32m+[m[32m        for item in bom_data:[m
+[32m+[m[32m            # 检查必填字段[m
+[32m+[m[32m            if not all([item.get('parent_material_code'), item.get('parent_material_name'),[m[41m [m
+[32m+[m[32m                       item.get('basic_quantity'), item.get('basic_unit'), item.get('recipe_names')]):[m
+[32m+[m[32m                errors.append(f"第{item.get('line_number', '?')}行：必填字段不完整")[m
+[32m+[m[32m                continue[m
+[32m+[m[41m            [m
+[32m+[m[32m            # 验证数量[m
+[32m+[m[32m            try:[m
+[32m+[m[32m                basic_quantity = float(item['basic_quantity'])[m
+[32m+[m[32m                if basic_quantity <= 0:[m
+[32m+[m[32m                    errors.append(f"第{item.get('line_number', '?')}行：基本数量必须大于0")[m
+[32m+[m[32m                    continue[m
+[32m+[m[32m            except:[m
+[32m+[m[32m                errors.append(f"第{item.get('line_number', '?')}行：基本数量必须是数字")[m
+[32m+[m[32m                continue[m
+[32m+[m[41m            [m
+[32m+[m[32m            # 查找配方ID[m
+[32m+[m[32m            recipe_ids = [][m
+[32m+[m[32m            for recipe_name in item['recipe_names']:[m
+[32m+[m[32m                recipe = Recipe.query.filter_by(recipe_name=recipe_name, is_active=True).first()[m
+[32m+[m[32m                if recipe:[m
+[32m+[m[32m                    recipe_ids.append(recipe.id)[m
+[32m+[m[32m                else:[m
+[32m+[m[32m                    errors.append(f"第{item.get('line_number', '?')}行：配方'{recipe_name}'不存在")[m
+[32m+[m[32m                    break[m
+[32m+[m[41m            [m
+[32m+[m[32m            if len(recipe_ids) != len(item['recipe_names']):[m
+[32m+[m[32m                continue[m
+[32m+[m[41m            [m
+[32m+[m[32m            # 添加到BOM项目列表[m
+[32m+[m[32m            bom_items.append({[m
+[32m+[m[32m                'parent_material_code': str(item['parent_material_code']),[m
+[32m+[m[32m                'parent_material_name': str(item['parent_material_name']),[m
+[32m+[m[32m                'basic_quantity': basic_quantity,[m
+[32m+[m[32m                'basic_unit': str(item['basic_unit']),[m
+[32m+[m[32m                'recipe_ids': recipe_ids,[m
+[32m+[m[32m                'remark': item.get('notes', '')[m
+[32m+[m[32m            })[m
+[32m+[m[41m        [m
+[32m+[m[32m        if errors:[m
+[32m+[m[32m            return jsonify({[m
+[32m+[m[32m                'success': False,[m[41m [m
+[32m+[m[32m                'message': f'生成失败，发现 {len(errors)} 个错误',[m
+[32m+[m[32m                'errors': errors[m
+[32m+[m[32m            }), 400[m
+[32m+[m[41m        [m
+[32m+[m[32m        if not bom_items:[m
+[32m+[m[32m            return jsonify({'success': False, 'message': '未找到有效的BOM数据'}), 400[m
+[32m+[m[41m        [m
+[32m+[m[32m        # 生成所有BOM的Excel文件[m
+[32m+[m[32m        wb_result = openpyxl.Workbook()[m
+[32m+[m[32m        ws_result = wb_result.active[m
+[32m+[m[32m        ws_result.title = "批量BOM表"[m
+[32m+[m[41m        [m
+[32m+[m[32m        # 确保只有一个工作表[m
+[32m+[m[32m        while len(wb_result.sheetnames) > 1:[m
+[32m+[m[32m            wb_result.remove(wb_result.sheetnames[-1])[m
+[32m+[m[41m        [m
+[32m+[m[32m        print(f"DEBUG: 创建工作簿，工作表数量: {len(wb_result.sheetnames)}")[m
+[32m+[m[32m        print(f"DEBUG: 工作表名称: {wb_result.sheetnames}")[m
+[32m+[m[41m        [m
+[32m+[m[32m        # 设置列宽 (A-Q列)[m
+[32m+[m[32m        column_widths = [15, 10, 20, 20, 30, 15, 10, 10, 10, 15, 15, 15, 20, 30, 15, 15, 15][m
+[32m+[m[32m        for i, width in enumerate(column_widths, 1):[m
+[32m+[m[32m            ws_result.column_dimensions[openpyxl.utils.get_column_letter(i)].width = width[m
+[32m+[m[41m        [m
+[32m+[m[32m        # 表头 (A-Q列)[m
+[32m+[m[32m        headers = ['字段名称', '工厂', 'BOM可选文本', '父项物料号', '物料名称', '生效日期',[m[41m [m
+[32m+[m[32m                   'BOM用途', '可选BOM', 'BOM状态', '基本数量', '基本单位', '行项目号',[m[41m [m
+[32m+[m[32m                   '项目类别', '子项物料号', '子项物料描述', '子项数量', '子项单位'][m
+[32m+[m[41m        [m
+[32m+[m[32m        for col, header in enumerate(headers, 1):[m
+[32m+[m[32m            cell = ws_result.cell(row=1, column=col, value=header)[m
+[32m+[m[32m            cell.font = Font(bold=True)[m
+[32m+[m[32m            cell.alignment = Alignment(horizontal='center', vertical='center')[m
+[32m+[m[41m        [m
+[32m+[m[32m        # 数据行[m
+[32m+[m[32m        row = 2[m
+[32m+[m[41m        [m
+[32m+[m[32m        for bom_item in bom_items:[m
+[32m+[m[32m            # 为每个父物料重新开始计数[m
+[32m+[m[32m            bom_counter = 0[m
+[32m+[m[41m            [m
+[32m+[m[32m            # 获取所有选中的配方信息[m
+[32m+[m[32m            all_items = [][m
+[32m+[m[41m            [m
+[32m+[m[32m            for recipe_id in bom_item['recipe_ids']:[m
+[32m+[m[32m                recipe = Recipe.query.get(recipe_id)[m
+[32m+[m[32m                if recipe:[m
+[32m+[m[32m                    items = RecipeItem.query.filter_by(recipe_id=recipe_id).order_by(RecipeItem.line_number).all()[m
+[32m+[m[32m                    # 为每个配方项添加配方信息[m
+[32m+[m[32m                    for item in items:[m
+[32m+[m[32m                        all_items.append({[m
+[32m+[m[32m                            'recipe_name': recipe.recipe_name,[m
+[32m+[m[32m                            'recipe_description': recipe.description,[m
+[32m+[m[32m                            'line_number': item.line_number,[m
+[32m+[m[32m                            'material_code': item.material_code,[m
+[32m+[m[32m                            'material_name': item.material_name,[m
+[32m+[m[32m                            'quantity': item.quantity,[m
+[32m+[m[32m                            'unit': item.unit,[m
+[32m+[m[32m                            'project_category': item.project_category[m
+[32m+[m[32m                        })[m
+[32m+[m[41m            [m
+[32m+[m[32m            # 按配方名称排序[m
+[32m+[m[32m            all_items.sort(key=lambda x: x['recipe_name'])[m
+[32m+[m[41m            [m
+[32m+[m[32m            # 为每个BOM项生成数据行[m
+[32m+[m[32m            current_recipe = None[m
+[32m+[m[41m            [m
+[32m+[m[32m            for item in all_items:[m
+[32m+[m[32m                # 如果是新配方，更新计数器[m
+[32m+[m[32m                if current_recipe != item['recipe_name']:[m
+[32m+[m[32m                    current_recipe = item['recipe_name'][m
+[32m+[m[32m                    bom_counter += 1[m
+[32m+[m[41m                [m
+[32m+[m[32m                # 每行都填写完整的数据[m
+[32m+[m[32m                ws_result.cell(row=row, column=1, value='')  # 字段名称[m
+[32m+[m[32m                ws_result.cell(row=row, column=2, value='P060')  # 工厂[m
+[32m+[m[32m                ws_result.cell(row=row, column=3, value=item['recipe_description'])  # BOM可选文本[m
+[32m+[m[32m                ws_result.cell(row=row, column=4, value=bom_item['parent_material_code'])  # 父项物料号[m
+[32m+[m[32m                ws_result.cell(row=row, column=5, value=bom_item['parent_material_name'])  # 物料名称[m
+[32m+[m[32m                ws_result.cell(row=row, column=6, value='')  # 生效日期[m
+[32m+[m[32m                ws_result.cell(row=row, column=7, value='1')  # BOM用途[m
+[32m+[m[32m                ws_result.cell(row=row, column=8, value=f"{bom_counter:02d}")  # 可选BOM[m
+[32m+[m[32m                ws_result.cell(row=row, column=9, value='01')  # BOM状态[m
+[32m+[m[32m                ws_result.cell(row=row, column=10, value=bom_item['basic_quantity'])  # 基本数量[m
+[32m+[m[32m                ws_result.cell(row=row, column=11, value=bom_item['basic_unit'])  # 基本单位[m
+[32m+[m[32m                ws_result.cell(row=row, column=12, value=item['line_number'])  # 行项目号[m
+[32m+[m[32m                ws_result.cell(row=row, column=13, value=item['project_category'])  # 项目类别[m
+[32m+[m[32m                ws_result.cell(row=row, column=14, value=item['material_code'])  # 子项物料号[m
+[32m+[m[32m                ws_result.cell(row=row, column=15, value=item['material_name'])  # 子项物料描述[m
+[32m+[m[32m                ws_result.cell(row=row, column=16, value=item['quantity'])  # 子项数量[m
+[32m+[m[32m                ws_result.cell(row=row, column=17, value=item['unit'])  # 子项单位[m
+[32m+[m[41m                [m
+[32m+[m[32m                row += 1[m
+[32m+[m[41m        [m
+[32m+[m[32m        # 保存文件[m
+[32m+[m[32m        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')[m
+[32m+[m[32m        wb_result.save(temp_file.name)[m
+[32m+[m[32m        temp_file.close()[m
+[32m+[m[41m        [m
+[32m+[m[32m        return jsonify({[m
+[32m+[m[32m            'success': True,[m
+[32m+[m[32m            'message': f'成功生成 {len(bom_items)} 个BOM表！',[m
+[32m+[m[32m            'file_path': temp_file.name,[m
+[32m+[m[32m            'bom_count': len(bom_items)[m
+[32m+[m[32m        })[m
+[32m+[m[41m        [m
+[32m+[m[32m    except Exception as e:[m
+[32m+[m[32m        return jsonify({'success': False, 'message': f'批量生成失败：{str(e)}'}), 400[m
+[32m+[m
+[32m+[m[32mif __name__ == '__main__':[m
+[32m+[m[32m    with app.app_context():[m
+[32m+[m[32m        db.create_all()[m
+[32m+[m[41m        [m
+[32m+[m[32m        # 初始化一些示例数据[m
+[32m+[m[32m        if not Recipe.query.first():[m
+[32m+[m[32m            recipe = Recipe(recipe_name='标准配方1', description='标准产品配方')[m
+[32m+[m[32m            db.session.add(recipe)[m
+[32m+[m[32m            db.session.commit()[m
+[32m+[m[41m            [m
+[32m+[m[32m            items = [[m
+[32m+[m[32m                RecipeItem(recipe_id=recipe.id, material_code='M001', material_name='原材料A',[m[41m [m
+[32m+[m[32m                          quantity=2.5, unit='KG', line_number='0010', project_category='L'),[m
+[32m+[m[32m                RecipeItem(recipe_id=recipe.id, material_code='M002', material_name='原材料B',[m[41m [m
+[32m+[m[32m                          quantity=5, unit='PCS', line_number='0020', project_category='L'),[m
+[32m+[m[32m            ][m
+[32m+[m[32m            for item in items:[m
+[32m+[m[32m                db.session.add(item)[m
+[32m+[m[41m            [m
+[32m+[m[32m            db.session.commit()[m
+[32m+[m[41m    [m
+[32m+[m[32m    app.run(host='0.0.0.0', port=5000, debug=True)[m
+[1mdiff --git a/config.py b/config.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..70e1f8a[m
+[1m--- /dev/null[m
+[1m+++ b/config.py[m
+[36m@@ -0,0 +1,119 @@[m
+[32m+[m[32m# BOM生成系统配置文件[m
+[32m+[m
+[32m+[m[32mimport os[m
+[32m+[m
+[32m+[m[32mclass Config:[m
+[32m+[m[32m    """基础配置类"""[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 基本设置[m
+[32m+[m[32m    SECRET_KEY = os.environ.get('SECRET_KEY') or 'bom-system-secret-key-2024'[m
+[32m+[m[32m    DEBUG = False[m
+[32m+[m[32m    TESTING = False[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 数据库设置[m
+[32m+[m[32m    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///bom_system.db'[m
+[32m+[m[32m    SQLALCHEMY_TRACK_MODIFICATIONS = False[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 文件上传设置[m
+[32m+[m[32m    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB[m
+[32m+[m[32m    UPLOAD_FOLDER = 'uploads'[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 系统设置[m
+[32m+[m[32m    DEFAULT_FACTORY_CODE = 'P060'  # 默认工厂代码[m
+[32m+[m[32m    DEFAULT_BOM_PURPOSE = '1'      # 默认BOM用途[m
+[32m+[m[32m    DEFAULT_BOM_STATUS = '01'      # 默认BOM状态[m
+[32m+[m[32m    DEFAULT_PROJECT_CATEGORY = 'L' # 默认项目类别[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 行项目号设置[m
+[32m+[m[32m    LINE_NUMBER_START = '0010'     # 行项目号起始值[m
+[32m+[m[32m    LINE_NUMBER_STEP = 10          # 行项目号步长[m
+[32m+[m[32m    LINE_NUMBER_FORMAT = '4'       # 行项目号格式（4位数字）[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 数量精度设置[m
+[32m+[m[32m    MAX_DECIMAL_PLACES = 3         # 最大小数位数[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 分页设置[m
+[32m+[m[32m    ITEMS_PER_PAGE = 20[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 日志设置[m
+[32m+[m[32m    LOG_LEVEL = 'INFO'[m
+[32m+[m[32m    LOG_FILE = 'bom_system.log'[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 安全设置[m
+[32m+[m[32m    SESSION_COOKIE_SECURE = False[m
+[32m+[m[32m    SESSION_COOKIE_HTTPONLY = True[m
+[32m+[m[32m    PERMANENT_SESSION_LIFETIME = 3600  # 1小时[m
+[32m+[m
+[32m+[m[32mclass DevelopmentConfig(Config):[m
+[32m+[m[32m    """开发环境配置"""[m
+[32m+[m[32m    DEBUG = True[m
+[32m+[m[32m    SQLALCHEMY_DATABASE_URI = 'sqlite:///bom_system_dev.db'[m
+[32m+[m
+[32m+[m[32mclass ProductionConfig(Config):[m
+[32m+[m[32m    """生产环境配置"""[m
+[32m+[m[32m    DEBUG = False[m
+[32m+[m[32m    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')[m
+[32m+[m[41m    [m
+[32m+[m[32m    # 生产环境安全设置[m
+[32m+[m[32m    SESSION_COOKIE_SECURE = True[m
+[32m+[m[32m    SESSION_COOKIE_HTTPONLY = True[m
+[32m+[m
+[32m+[m[32mclass TestingConfig(Config):[m
+[32m+[m[32m    """测试环境配置"""[m
+[32m+[m[32m    TESTING = True[m
+[32m+[m[32m    SQLALCHEMY_DATABASE_URI = 'sqlite:///bom_system_test.db'[m
+[32m+[m
+[32m+[m[32m# 配置字典[m
+[32m+[m[32mconfig = {[m
+[32m+[m[32m    'development': DevelopmentConfig,[m
+[32m+[m[32m    'production': ProductionConfig,[m
+[32m+[m[32m    'testing': TestingConfig,[m
+[32m+[m[32m    'default': DevelopmentConfig[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32m# 项目类别选项[m
+[32m+[m[32mPROJECT_CATEGORIES = [[m
+[32m+[m[32m    'L',  # 固定值[m
+[32m+[m[32m    'N'   # 虚拟件[m
+[32m+[m[32m][m
+[32m+[m
+[32m+[m[32m# BOM用途选项[m
+[32m+[m[32mBOM_PURPOSES = [[m
+[32m+[m[32m    '1',  # 生产[m
+[32m+[m[32m    '2',  # 销售[m
+[32m+[m[32m    '3',  # 工程[m
+[32m+[m[32m    '4',  # 成本核算[m
+[32m+[m[32m    '5'   # 其他[m
+[32m+[m[32m][m
+[32m+[m
+[32m+[m[32m# BOM状态选项[m
+[32m+[m[32mBOM_STATUSES = [[m
+[32m+[m[32m    '01',  # 有效[m
+[32m+[m[32m    '02',  # 无效[m
+[32m+[m[32m    '03',  # 待审核[m
+[32m+[m[32m    '04'   # 已废弃[m
+[32m+[m[32m][m
+[32m+[m
+[32m+[m[32m# Excel导出设置[m
+[32m+[m[32mEXCEL_SETTINGS = {[m
+[32m+[m[32m    'sheet_name': 'BOM表',[m
+[32m+[m[32m    'column_widths': [15, 10, 20, 20, 30, 15, 10, 10, 10, 15, 15, 15, 20, 30, 15, 15],[m
+[32m+[m[32m    'header_style': {[m
+[32m+[m[32m        'font': {'bold': True, 'size': 12},[m
+[32m+[m[32m        'alignment': {'horizontal': 'center', 'vertical': 'center'},[m
+[32m+[m[32m        'fill': {'fgColor': 'CCCCCC'}[m
+[32m+[m[32m    },[m
+[32m+[m[32m    'data_style': {[m
+[32m+[m[32m        'font': {'size': 10},[m
+[32m+[m[32m        'alignment': {'horizontal': 'left', 'vertical': 'center'}[m
+[32m+[m[32m    }[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32m# 系统信息[m
+[32m+[m[32mSYSTEM_INFO = {[m
+[32m+[m[32m    'name': 'BOM生成系统',[m
+[32m+[m[32m    'version': '1.0.0',[m
+[32m+[m[32m    'description': '自动生成物料清单表的Web应用系统',[m
+[32m+[m[32m    'author': 'System Administrator',[m
+[32m+[m[32m    'contact': 'admin@company.com'[m
+[32m+[m[32m}[m
+[1mdiff --git a/demo.py b/demo.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..c24d8bc[m
+[1m--- /dev/null[m
+[1m+++ b

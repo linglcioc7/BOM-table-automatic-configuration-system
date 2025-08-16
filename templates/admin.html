@@ -46,6 +46,88 @@
         .modal-xl {
             max-width: 90%;
         }
+        
+        /* 搜索和筛选样式 */
+        .search-filter-container {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: #e3f2fd !important;
+            cursor: pointer;
+        }
+        
+        .table-dark th {
+            background-color: #343a40 !important;
+            color: white !important;
+            font-weight: bold;
+            text-align: center;
+            vertical-align: middle;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .action-buttons .btn {
+            min-width: 32px;
+            height: 32px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 分页控制样式 */
+        .pagination-controls {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .page-jump {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .page-jump input {
+            width: 80px;
+            text-align: center;
+        }
+        
+        /* 统计信息样式 */
+        .stats-alert {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 1px solid #90caf9;
+            color: #1565c0;
+        }
+        
+        /* 响应式优化 */
+        @media (max-width: 768px) {
+            .action-buttons {
+                flex-direction: column;
+                gap: 2px;
+            }
+            
+            .action-buttons .btn {
+                width: 100%;
+                height: auto;
+                padding: 5px;
+            }
+            
+            .pagination-controls {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -53,9 +135,20 @@
         <div class="container">
             <h1><i class="bi bi-gear"></i> BOM系统管理</h1>
             <p class="lead">配方信息维护</p>
-            <a href="/" class="btn btn-outline-light">
-                <i class="bi bi-arrow-left"></i> 返回主页
-            </a>
+            <div class="d-flex justify-content-center align-items-center gap-3">
+                <a href="/" class="btn btn-outline-light">
+                    <i class="bi bi-arrow-left"></i> 返回主页
+                </a>
+                <div class="user-info">
+                    <span class="badge bg-light text-dark">
+                        <i class="bi bi-person-circle"></i> 欢迎，{{ session.username }}
+                    </span>
+                </div>
+                <a href="{{ url_for('admin_logout') }}" class="btn btn-outline-warning" 
+                   onclick="return confirm('确定要退出登录吗？')">
+                    <i class="bi bi-box-arrow-right"></i>退出登录
+                </a>
+            </div>
         </div>
     </div>
 
@@ -73,8 +166,8 @@
                     <button class="btn btn-success me-2" onclick="downloadTemplate()">
                         <i class="bi bi-download"></i> 下载模板
                     </button>
-                    <button class="btn btn-warning me-2" onclick="exportAllRecipes()">
-                        <i class="bi bi-file-earmark-excel"></i> 批量导出
+                    <button class="btn btn-warning me-2" onclick="exportAllRecipes()" title="导出所有配方，可用于备份">
+                        <i class="bi bi-file-earmark-excel"></i> 批量导出/备份
                     </button>
                     <button class="btn btn-info" onclick="showImportModal()">
                         <i class="bi bi-upload"></i> 导入配方
@@ -83,10 +176,109 @@
             </div>
         </div>
 
+        <!-- 配方搜索和筛选 -->
+        <div class="admin-container">
+            <h3><i class="bi bi-search"></i> 配方搜索和筛选</h3>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" id="recipeSearchInput" placeholder="搜索配方名称或描述...">
+                        <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">清空</button>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <select class="form-control" id="categoryFilter">
+                            <option value="">所有产品类别</option>
+                            <!-- 产品类别选项将动态加载 -->
+                        </select>
+                        <button class="btn btn-outline-secondary" type="button" onclick="refreshCategories()" title="刷新产品类别">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-control" id="sortOrder">
+                        <option value="name_asc">配方名称 ↑</option>
+                        <option value="name_desc">配方名称 ↓</option>
+                        <option value="created_asc">创建时间 ↑</option>
+                        <option value="created_desc">创建时间 ↓</option>
+                        <option value="updated_asc">更新时间 ↑</option>
+                        <option value="updated_desc">更新时间 ↓</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-control" id="pageSize">
+                        <option value="10">10条/页</option>
+                        <option value="20" selected>20条/页</option>
+                        <option value="50">50条/页</option>
+                        <option value="100">100条/页</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- 统计信息 -->
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <div class="alert stats-alert">
+                        <i class="bi bi-info-circle"></i> 
+                        共找到 <span id="totalRecipes">0</span> 个配方，
+                        当前显示第 <span id="currentPage">1</span> 页，
+                        每页 <span id="itemsPerPage">20</span> 条记录
+                        <span class="ms-3">| 产品类别分布：<span id="categoryStats">-</span></span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 批量操作 -->
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <button class="btn btn-outline-primary btn-sm" onclick="selectAllVisible()">
+                                <i class="bi bi-check-all"></i> 全选当前页
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm ms-2" onclick="clearAllSelection()">
+                                <i class="bi bi-x-circle"></i> 清空选择
+                            </button>
+                            <span class="ms-3 text-muted">
+                                已选择: <span id="selectedCount">0</span> 个配方
+                            </span>
+                        </div>
+                        <div>
+                            <button class="btn btn-danger btn-sm" onclick="batchDeleteSelected()" id="batchDeleteBtn" disabled>
+                                <i class="bi bi-trash"></i> 批量删除
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- 现有配方列表 -->
         <div class="admin-container">
             <h3><i class="bi bi-list-ul"></i> 现有配方</h3>
             <div id="existingRecipes"></div>
+            
+            <!-- 分页控制 -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="btn-group">
+                    <button class="btn btn-outline-primary" onclick="changePage(-1)" id="prevPageBtn" disabled>
+                        <i class="bi bi-chevron-left"></i> 上一页
+                    </button>
+                    <span class="btn btn-outline-secondary disabled" id="pageInfo">第1页</span>
+                    <button class="btn btn-outline-primary" onclick="changePage(1)" id="nextPageBtn">
+                        下一页 <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+                
+                <div class="d-flex align-items-center">
+                    <span class="me-2">跳转到:</span>
+                    <input type="number" class="form-control" id="jumpToPage" min="1" style="width: 80px;" placeholder="页码">
+                    <button class="btn btn-outline-secondary ms-2" onclick="jumpToPage()">跳转</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -102,16 +294,22 @@
                     <form id="recipeForm">
                         <input type="hidden" id="recipe_id" value="">
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="recipe_name" class="form-label">配方名称 *</label>
                                     <input type="text" class="form-control" id="recipe_name" required>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="recipe_description" class="form-label">配方描述</label>
                                     <input type="text" class="form-control" id="recipe_description">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="product_category" class="form-label">产品类别</label>
+                                    <input type="text" class="form-control" id="product_category" placeholder="如：电子产品、机械零件等">
                                 </div>
                             </div>
                         </div>
@@ -166,6 +364,12 @@
                             </button>
                         </div>
                     </form>
+                    
+                    <!-- 弹窗底部提示信息显示区域 -->
+                    <div id="modalAlert" class="alert mt-3" style="display: none;">
+                        <i class="bi bi-exclamation-triangle"></i> 
+                        <span id="modalAlertMessage"></span>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
@@ -193,16 +397,18 @@
                         </div>
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle"></i> 
-                            <strong>多配方导入说明：</strong><br>
+                            <strong>配方批量导入说明：</strong><br>
                             1. 请先下载模板文件，按照模板格式填写数据<br>
-                            2. 模板包含两个工作表："配方数据"和"使用说明"<br>
-                            3. 在"配方数据"工作表中填写配方信息<br>
-                            4. 配方名称相同的行将被识别为同一个配方<br>
-                            5. 每个配方可以有多个配方项（多行数据）<br>
-                            6. 支持的行号格式：0010、0020、0030...<br>
-                            7. 支持的类别：L(固定值)或N(虚拟件)<br>
+                            2. 模板列说明：A-配方名称、B-配方描述、C-行号、D-物料编码、E-物料名称、F-数量、G-单位、H-类别、I-产品类别<br>
+                            3. 配方名称相同的行将被识别为同一个配方<br>
+                            4. 每个配方可以有多个配方项（多行数据）<br>
+                            5. 行号格式：0010、0020、0030...（建议使用文本格式）<br>
+                            6. 类别：L(固定值)或N(虚拟件)<br>
+                            7. 产品类别为非必填项，可为空<br>
                             8. <strong>可以一次性导入多个配方！</strong><br>
-                            9. 详细说明请查看"使用说明"工作表
+                            9. 必填字段：配方名称、行号、物料编码、物料名称、数量、单位<br>
+                            10. <strong>重复配方名称处理：</strong>如果配方名称已存在，将自动覆盖原有配方内容<br>
+                            11. <strong>备份恢复功能：</strong>导出的配方表格可以直接导入回系统，实现配方备份和恢复
                         </div>
                     </form>
                 </div>
@@ -227,9 +433,11 @@
             loadExistingRecipes();
             setupEventListeners();
             
-            // 初始化模态框
-            recipeModal = new bootstrap.Modal(document.getElementById('recipeModal'));
-            importModal = new bootstrap.Modal(document.getElementById('importModal'));
+                    // 初始化模态框
+        recipeModal = new bootstrap.Modal(document.getElementById('recipeModal'));
+        importModal = new bootstrap.Modal(document.getElementById('importModal'));
+        
+
         });
 
         function setupEventListeners() {
@@ -252,9 +460,12 @@
             document.getElementById('recipeForm').reset();
             document.getElementById('recipe_id').value = '';
             
-            // 重置配方项
+            // 重置配方项和计数器
             document.getElementById('recipeItems').innerHTML = '';
+            recipeItemCounter = 0; // 重置计数器，确保行号从0010开始
             addRecipeItem();
+            
+
             
             recipeModal.show();
         }
@@ -275,6 +486,7 @@
                             if (recipe) {
                                 document.getElementById('recipe_name').value = recipe.name;
                                 document.getElementById('recipe_description').value = recipe.description || '';
+                                document.getElementById('product_category').value = recipe.product_category || '';
                             }
                         });
                     
@@ -297,6 +509,7 @@
 
         function addRecipeItem(itemData = null) {
             recipeItemCounter++;
+            // 如果是编辑现有配方项，使用原有行号；如果是新增，从0010开始计数
             const lineNumber = itemData ? itemData.line_number : String(recipeItemCounter * 10).padStart(4, '0');
             
             const newItem = document.createElement('div');
@@ -317,13 +530,13 @@
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">数量</label>
-                        <input type="number" class="form-control recipe-quantity" step="0.001" value="${itemData ? itemData.quantity : ''}" required>
+                        <input type="number" class="form-control recipe-quantity" step="0.001" value="${itemData ? itemData.quantity : '1.0'}" min="0.001" required>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">单位</label>
                         <select class="form-control recipe-unit">
-                            <option value="PCS" ${itemData && itemData.unit === 'PCS' ? 'selected' : ''}>PCS</option>
                             <option value="KG" ${itemData && itemData.unit === 'KG' ? 'selected' : ''}>KG</option>
+                            <option value="PCS" ${itemData && itemData.unit === 'PCS' ? 'selected' : ''}>PCS</option>
                             <option value="M" ${itemData && itemData.unit === 'M' ? 'selected' : ''}>M</option>
                             <option value="L" ${itemData && itemData.unit === 'L' ? 'selected' : ''}>L</option>
                             <option value="M2" ${itemData && itemData.unit === 'M2' ? 'selected' : ''}>M²</option>
@@ -347,24 +560,77 @@
         }
 
         function saveRecipe() {
-            const recipeData = {
-                name: document.getElementById('recipe_name').value,
-                description: document.getElementById('recipe_description').value,
-                items: []
-            };
+            // 验证配方名称
+            const recipeName = document.getElementById('recipe_name').value.trim();
+            if (!recipeName) {
+                showAlert('请输入配方名称', 'warning');
+                return;
+            }
 
             // 收集配方项数据
             const items = document.querySelectorAll('.recipe-item');
-            items.forEach(item => {
-                recipeData.items.push({
-                    line_number: item.querySelector('.recipe-line').value,
-                    material_code: item.querySelector('.recipe-material-code').value,
-                    material_name: item.querySelector('.recipe-material-name').value,
-                    quantity: parseFloat(item.querySelector('.recipe-quantity').value),
-                    unit: item.querySelector('.recipe-unit').value,
-                    project_category: item.querySelector('.recipe-category').value
+            if (items.length === 0) {
+                showAlert('请至少添加一个配方项', 'warning');
+                return;
+            }
+
+            const recipeItems = [];
+            let hasError = false;
+
+            items.forEach((item, index) => {
+                const materialCode = item.querySelector('.recipe-material-code').value.trim();
+                const materialName = item.querySelector('.recipe-material-name').value.trim();
+                const quantityInput = item.querySelector('.recipe-quantity').value.trim();
+                const unit = item.querySelector('.recipe-unit').value;
+                const lineNumber = item.querySelector('.recipe-line').value.trim();
+                const projectCategory = item.querySelector('.recipe-category').value;
+
+                // 验证必填字段
+                if (!materialCode) {
+                    showAlert(`第${index + 1}个配方项：请输入物料编码`, 'warning');
+                    hasError = true;
+                    return;
+                }
+
+                if (!materialName) {
+                    showAlert(`第${index + 1}个配方项：请输入物料名称`, 'warning');
+                    hasError = true;
+                    return;
+                }
+
+                if (!quantityInput) {
+                    showAlert(`第${index + 1}个配方项：请输入数量`, 'warning');
+                    hasError = true;
+                    return;
+                }
+
+                const quantity = parseFloat(quantityInput);
+                if (isNaN(quantity) || quantity <= 0) {
+                    showAlert(`第${index + 1}个配方项：数量必须是大于0的数字`, 'warning');
+                    hasError = true;
+                    return;
+                }
+
+                recipeItems.push({
+                    line_number: lineNumber,
+                    material_code: materialCode,
+                    material_name: materialName,
+                    quantity: quantity,
+                    unit: unit,
+                    project_category: projectCategory
                 });
             });
+
+            if (hasError) {
+                return;
+            }
+
+            const recipeData = {
+                name: recipeName,
+                description: document.getElementById('recipe_description').value.trim(),
+                product_category: document.getElementById('product_category').value.trim(),
+                items: recipeItems
+            };
 
             const url = currentRecipeId ? `/api/recipe/${currentRecipeId}` : '/api/recipe';
             const method = currentRecipeId ? 'PUT' : 'POST';
@@ -379,9 +645,19 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showAlert(currentRecipeId ? '配方更新成功！' : '配方保存成功！', 'success');
+                    // 根据返回消息判断是新建还是覆盖
+                    if (data.message.includes('已覆盖')) {
+                        showAlert(data.message, 'info');
+                    } else {
+                        showAlert(currentRecipeId ? '配方更新成功！' : '配方保存成功！', 'success');
+                    }
+                    
                     recipeModal.hide();
                     loadExistingRecipes();
+                    // 如果添加了新的产品类别，刷新类别选项
+                    if (!currentRecipeId && recipeData.product_category) {
+                        loadRecipeCategories();
+                    }
                 } else {
                     showAlert('保存失败：' + data.message, 'danger');
                 }
@@ -439,6 +715,8 @@
                     importModal.hide();
                     document.getElementById('importForm').reset();
                     loadExistingRecipes();
+                    // 导入成功后刷新产品类别选项
+                    loadRecipeCategories();
                 } else {
                     showAlert('导入失败：' + data.message, 'danger');
                 }
@@ -453,48 +731,361 @@
             window.location.href = `/api/recipe/export/${recipeId}`;
         }
 
+        // 全局变量
+        let allRecipes = [];
+        let filteredRecipes = [];
+        let currentPage = 1;
+        let pageSize = 20;
+        let searchTerm = '';
+        let categoryFilter = '';
+        let sortOrder = 'name_asc';
+
         function loadExistingRecipes() {
             fetch('/api/recipes')
                 .then(response => response.json())
                 .then(recipes => {
-                    const container = document.getElementById('existingRecipes');
-                    if (recipes.length === 0) {
-                        container.innerHTML = '<p class="text-muted">暂无配方数据</p>';
-                        return;
-                    }
-
-                    let html = '<div class="table-responsive"><table class="table table-striped">';
-                    html += '<thead><tr><th>配方名称</th><th>描述</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead><tbody>';
-                    
-                    recipes.forEach(recipe => {
-                        html += `<tr>
-                            <td>${recipe.name}</td>
-                            <td>${recipe.description || ''}</td>
-                            <td>${recipe.created_at}</td>
-                            <td>${recipe.updated_at}</td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn btn-sm btn-info" onclick="viewRecipe(${recipe.id})">
-                                        <i class="bi bi-eye"></i> 查看
-                                    </button>
-                                    <button class="btn btn-sm btn-warning" onclick="showEditRecipeModal(${recipe.id})">
-                                        <i class="bi bi-pencil"></i> 编辑
-                                    </button>
-                                    <button class="btn btn-sm btn-success" onclick="exportRecipe(${recipe.id})">
-                                        <i class="bi bi-download"></i> 导出
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" onclick="deleteRecipe(${recipe.id})">
-                                        <i class="bi bi-trash"></i> 删除
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>`;
-                    });
-                    
-                    html += '</tbody></table></div>';
-                    container.innerHTML = html;
+                    allRecipes = recipes;
+                    applyFiltersAndSearch();
                 })
                 .catch(error => console.error('加载配方失败:', error));
+        }
+
+        function applyFiltersAndSearch() {
+            // 应用搜索
+            filteredRecipes = allRecipes.filter(recipe => {
+                const matchesSearch = !searchTerm || 
+                    recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (recipe.description && recipe.description.toLowerCase().includes(searchTerm.toLowerCase()));
+                
+                // 应用产品类别筛选
+                let matchesCategory = true;
+                if (categoryFilter) {
+                    if (categoryFilter === '未分类') {
+                        // 筛选未分类的配方（product_category为空或null）
+                        matchesCategory = !recipe.product_category || recipe.product_category === '';
+                    } else {
+                        // 筛选指定类别的配方
+                        matchesCategory = recipe.product_category === categoryFilter;
+                    }
+                }
+                
+                return matchesSearch && matchesCategory;
+            });
+
+            // 应用排序
+            filteredRecipes.sort((a, b) => {
+                switch (sortOrder) {
+                    case 'name_asc':
+                        return a.name.localeCompare(b.name);
+                    case 'name_desc':
+                        return b.name.localeCompare(a.name);
+                    case 'created_asc':
+                        return new Date(a.created_at) - new Date(b.created_at);
+                    case 'created_desc':
+                        return new Date(b.created_at) - new Date(a.created_at);
+                    case 'updated_asc':
+                        return new Date(a.updated_at) - new Date(a.updated_at);
+                    case 'updated_desc':
+                        return new Date(b.updated_at) - new Date(a.updated_at);
+                    default:
+                        return 0;
+                }
+            });
+
+            // 重置到第一页
+            currentPage = 1;
+            
+            // 渲染配方列表
+            renderRecipes();
+            updatePagination();
+            updateStats();
+        }
+
+        function renderRecipes() {
+            const container = document.getElementById('existingRecipes');
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const pageRecipes = filteredRecipes.slice(startIndex, endIndex);
+
+            if (filteredRecipes.length === 0) {
+                container.innerHTML = '<div class="alert alert-info"><i class="bi bi-info-circle"></i> 没有找到匹配的配方</div>';
+                return;
+            }
+
+            let html = '<div class="table-responsive"><table class="table table-striped table-hover">';
+            html += '<thead class="table-dark"><tr><th><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)"></th><th>配方名称</th><th>产品类别</th><th>描述</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead><tbody>';
+            
+            pageRecipes.forEach(recipe => {
+                html += `<tr data-recipe-id="${recipe.id}">
+                    <td class="text-center">
+                        <input type="checkbox" class="recipe-checkbox" value="${recipe.id}" onchange="updateSelectedCount()">
+                    </td>
+                    <td><strong>${recipe.name}</strong></td>
+                    <td><span class="badge ${recipe.product_category ? 'bg-primary' : 'bg-secondary'}">${recipe.product_category || '未分类'}</span></td>
+                    <td>${recipe.description || '<span class="text-muted">无描述</span>'}</td>
+                    <td><small>${recipe.created_at}</small></td>
+                    <td><small>${recipe.updated_at}</small></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-sm btn-info" onclick="viewRecipe(${recipe.id})" title="查看详情">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning" onclick="showEditRecipeModal(${recipe.id})" title="编辑配方">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-success" onclick="exportRecipe(${recipe.id})" title="导出配方">
+                                <i class="bi bi-download"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteRecipe(${recipe.id})" title="删除配方">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredRecipes.length / pageSize);
+            
+            // 更新页码信息
+            document.getElementById('pageInfo').textContent = `第${currentPage}页 / 共${totalPages}页`;
+            
+            // 更新按钮状态
+            document.getElementById('prevPageBtn').disabled = currentPage <= 1;
+            document.getElementById('nextPageBtn').disabled = currentPage >= totalPages;
+            
+            // 更新跳转页码输入框
+            document.getElementById('jumpToPage').value = currentPage;
+            document.getElementById('jumpToPage').max = totalPages;
+        }
+
+        function updateStats() {
+            document.getElementById('totalRecipes').textContent = filteredRecipes.length;
+            document.getElementById('currentPage').textContent = currentPage;
+            document.getElementById('itemsPerPage').textContent = pageSize;
+            
+            // 统计产品类别分布
+            const categoryCounts = {};
+            filteredRecipes.forEach(recipe => {
+                const category = recipe.product_category || '未分类';
+                categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+            });
+            
+            const categoryStatsText = Object.entries(categoryCounts)
+                .map(([category, count]) => `${category}: ${count}`)
+                .join(', ');
+            
+            document.getElementById('categoryStats').textContent = categoryStatsText || '无数据';
+        }
+
+        function changePage(delta) {
+            const newPage = currentPage + delta;
+            const totalPages = Math.ceil(filteredRecipes.length / pageSize);
+            
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                renderRecipes();
+                updatePagination();
+            }
+        }
+
+        function jumpToPage() {
+            const input = document.getElementById('jumpToPage');
+            const targetPage = parseInt(input.value);
+            const totalPages = Math.ceil(filteredRecipes.length / pageSize);
+            
+            if (targetPage >= 1 && targetPage <= totalPages) {
+                currentPage = targetPage;
+                renderRecipes();
+                updatePagination();
+            } else {
+                showAlert('请输入有效的页码', 'warning');
+                input.value = currentPage;
+            }
+        }
+
+        function clearSearch() {
+            document.getElementById('recipeSearchInput').value = '';
+            searchTerm = '';
+            applyFiltersAndSearch();
+        }
+
+        // 批量操作相关函数
+        function toggleSelectAll(checkbox) {
+            const recipeCheckboxes = document.querySelectorAll('.recipe-checkbox');
+            recipeCheckboxes.forEach(cb => {
+                cb.checked = checkbox.checked;
+            });
+            updateSelectedCount();
+        }
+
+        function selectAllVisible() {
+            const recipeCheckboxes = document.querySelectorAll('.recipe-checkbox');
+            recipeCheckboxes.forEach(cb => {
+                cb.checked = true;
+            });
+            document.getElementById('selectAllCheckbox').checked = true;
+            updateSelectedCount();
+        }
+
+        function clearAllSelection() {
+            const recipeCheckboxes = document.querySelectorAll('.recipe-checkbox');
+            recipeCheckboxes.forEach(cb => {
+                cb.checked = false;
+            });
+            document.getElementById('selectAllCheckbox').checked = false;
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const selectedCheckboxes = document.querySelectorAll('.recipe-checkbox:checked');
+            const selectedCount = selectedCheckboxes.length;
+            document.getElementById('selectedCount').textContent = selectedCount;
+            
+            // 更新批量删除按钮状态
+            const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+            batchDeleteBtn.disabled = selectedCount === 0;
+            
+            // 更新全选复选框状态
+            const allCheckboxes = document.querySelectorAll('.recipe-checkbox');
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            if (allCheckboxes.length > 0) {
+                selectAllCheckbox.checked = selectedCount === allCheckboxes.length;
+                selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < allCheckboxes.length;
+            }
+        }
+
+        function batchDeleteSelected() {
+            const selectedCheckboxes = document.querySelectorAll('.recipe-checkbox:checked');
+            if (selectedCheckboxes.length === 0) {
+                showAlert('请先选择要删除的配方', 'warning');
+                return;
+            }
+
+            const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+            const confirmMessage = `确定要删除选中的 ${selectedIds.length} 个配方吗？删除后无法恢复。`;
+
+            if (confirm(confirmMessage)) {
+                // 显示加载状态
+                const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+                const originalText = batchDeleteBtn.innerHTML;
+                batchDeleteBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> 删除中...';
+                batchDeleteBtn.disabled = true;
+
+                // 批量删除
+                let deletedCount = 0;
+                let failedCount = 0;
+
+                Promise.all(selectedIds.map(id => 
+                    fetch(`/api/recipe/${id}`, { method: 'DELETE' })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                deletedCount++;
+                            } else {
+                                failedCount++;
+                            }
+                        })
+                        .catch(() => failedCount++)
+                )).then(() => {
+                    // 显示结果
+                    if (failedCount === 0) {
+                        showAlert(`成功删除 ${deletedCount} 个配方！`, 'success');
+                    } else {
+                        showAlert(`删除完成：成功 ${deletedCount} 个，失败 ${failedCount} 个`, 'warning');
+                    }
+                    
+                    // 重新加载数据
+                    loadExistingRecipes();
+                    
+                    // 恢复按钮状态
+                    batchDeleteBtn.innerHTML = originalText;
+                    batchDeleteBtn.disabled = false;
+                });
+            }
+        }
+
+        // 事件监听器
+        document.addEventListener('DOMContentLoaded', function() {
+            // 搜索输入框
+            const searchInput = document.getElementById('recipeSearchInput');
+            searchInput.addEventListener('input', function() {
+                searchTerm = this.value;
+                applyFiltersAndSearch();
+            });
+
+            // 类别筛选
+            const categoryFilterSelect = document.getElementById('categoryFilter');
+            categoryFilterSelect.addEventListener('change', function() {
+                categoryFilter = this.value;
+                applyFiltersAndSearch();
+            });
+
+            // 排序方式
+            const sortOrderSelect = document.getElementById('sortOrder');
+            sortOrderSelect.addEventListener('change', function() {
+                sortOrder = this.value;
+                applyFiltersAndSearch();
+            });
+
+            // 每页显示数量
+            const pageSizeSelect = document.getElementById('pageSize');
+            pageSizeSelect.addEventListener('change', function() {
+                pageSize = parseInt(this.value);
+                currentPage = 1; // 重置到第一页
+                applyFiltersAndSearch();
+            });
+
+            // 加载产品类别选项
+            loadRecipeCategories();
+            
+            // 加载配方数据
+            loadExistingRecipes();
+        });
+
+        // 动态加载产品类别选项
+        function loadRecipeCategories() {
+            fetch('/api/recipe/categories')
+                .then(response => response.json())
+                .then(categories => {
+                    const categoryFilter = document.getElementById('categoryFilter');
+                    
+                    // 保留"所有产品类别"选项
+                    const allOption = categoryFilter.querySelector('option[value=""]');
+                    categoryFilter.innerHTML = '';
+                    categoryFilter.appendChild(allOption);
+                    
+                    // 添加动态加载的类别选项
+                    categories.forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = category;
+                        option.textContent = category;
+                        categoryFilter.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('加载产品类别失败:', error);
+                    // 如果加载失败，显示默认选项
+                    const categoryFilter = document.getElementById('categoryFilter');
+                    const defaultCategories = ['电子产品', '机械零件', '化工产品', '食品饮料', '其他'];
+                    
+                    defaultCategories.forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = category;
+                        option.textContent = category;
+                        categoryFilter.appendChild(option);
+                    });
+                });
+        }
+
+        // 手动刷新产品类别选项
+        function refreshCategories() {
+            loadRecipeCategories();
+            showAlert('产品类别已刷新', 'info');
         }
 
         function viewRecipe(recipeId) {
@@ -562,6 +1153,8 @@
                 }
             }, 3000);
         }
+
+
 
         // 批量导出所有配方
         function exportAllRecipes() {
