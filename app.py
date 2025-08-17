@@ -13,6 +13,10 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///bom_system.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'bom_system_secret_key_2025'  # 用于session加密
+app.config['SESSION_COOKIE_SECURE'] = False  # 开发环境设为False
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # 防止XSS攻击
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # 跨站请求保护
+app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 会话有效期24小时
 db = SQLAlchemy(app)
 
 # 登录验证装饰器
@@ -70,8 +74,10 @@ def admin_login():
         password = request.form.get('password')
         
         if username == 'shwx' and password == 'shwxjsb':
+            session.permanent = True  # 设置永久会话
             session['logged_in'] = True
             session['username'] = username
+            session['login_time'] = datetime.now().isoformat()
             return redirect(url_for('admin'))
         else:
             return render_template('admin_login.html', error='用户名或密码错误')
@@ -100,6 +106,15 @@ def get_recipes():
         'created_at': r.created_at.strftime('%Y-%m-%d %H:%M:%S') if r.created_at else '',
         'updated_at': r.updated_at.strftime('%Y-%m-%d %H:%M:%S') if r.updated_at else ''
     } for r in recipes])
+
+@app.route('/api/session/status')
+def check_session_status():
+    """检查用户会话状态"""
+    return jsonify({
+        'logged_in': session.get('logged_in', False),
+        'username': session.get('username', ''),
+        'login_time': session.get('login_time', '')
+    })
 
 @app.route('/api/recipe/categories')
 def get_recipe_categories():
@@ -878,10 +893,37 @@ if __name__ == '__main__':
             db.session.commit()
     
     # 生产环境配置
-    app.run(
-        host='0.0.0.0',  # 允许局域网访问
-        port=5000, 
-        debug=False,  # 关闭调试模式，提高安全性
-        threaded=True,  # 启用多线程，支持并发访问
-        processes=1  # 单进程模式，避免数据库连接问题
-    )
+    import os
+    
+    # 检查环境变量，决定使用哪种服务器
+    if os.environ.get('FLASK_ENV') == 'production' or os.environ.get('USE_PRODUCTION_SERVER'):
+        # 使用生产级WSGI服务器
+        try:
+            from waitress import serve
+            print("🚀 使用生产级Waitress WSGI服务器启动...")
+            print("📍 访问地址：")
+            print("   本机访问：http://localhost:5000")
+            print("   局域网访问：http://0.0.0.0:5000")
+            print("✅ 生产环境模式，无开发服务器警告")
+            serve(app, host='0.0.0.0', port=5000, threads=4)
+        except ImportError:
+            print("⚠️  Waitress未安装，回退到Flask内置服务器")
+            print("💡 建议安装：pip install waitress")
+            app.run(
+                host='0.0.0.0',  # 允许局域网访问
+                port=5000, 
+                debug=False,  # 关闭调试模式，提高安全性
+                threaded=True,  # 启用多线程，支持并发访问
+                processes=1  # 单进程模式，避免数据库连接问题
+            )
+    else:
+        # 开发环境配置
+        print("🔧 使用Flask内置服务器启动（开发模式）")
+        print("⚠️  注意：这是开发服务器，不适合生产环境")
+        app.run(
+            host='0.0.0.0',  # 允许局域网访问
+            port=5000, 
+            debug=False,  # 关闭调试模式，提高安全性
+            threaded=True,  # 启用多线程，支持并发访问
+            processes=1  # 单进程模式，避免数据库连接问题
+        )

@@ -168,8 +168,8 @@
             <h1><i class="bi bi-gear-wide-connected"></i> BOM生成系统</h1>
             <p class="lead">自动生成物料清单表，提高工作效率</p>
             <div class="mt-3">
-                <a href="/admin/login" class="btn btn-outline-light btn-lg">
-                    <i class="bi bi-gear"></i> 配方管理
+                <a href="/admin/login" class="btn btn-outline-light btn-lg" id="headerAdminLink">
+                    <i class="bi bi-gear"></i> <span id="headerAdminText">配方管理</span>
                 </a>
             </div>
         </div>
@@ -328,8 +328,8 @@
                                     </small>
                                     
                                     <div class="mt-3">
-                                        <a href="/admin/login" class="btn btn-outline-primary">
-                                            <i class="bi bi-gear"></i> 配方管理
+                                        <a href="/admin/login" class="btn btn-outline-primary" id="batchAdminLink">
+                                            <i class="bi bi-gear"></i> <span id="batchAdminText">配方管理</span>
                                         </a>
                                         <small class="text-muted d-block mt-2">
                                             管理配方信息，添加、编辑、删除配方（需要登录）
@@ -493,6 +493,8 @@
             loadRecipeCategories();
             setupSearch();
             setupCategoryFilter();
+            checkSessionStatus();
+            setupSmartLinks();
         });
 
         // 设置搜索功能
@@ -510,6 +512,71 @@
                 categoryFilter = this.value;
                 filterRecipes();
             });
+        }
+
+        // 检查会话状态
+        function checkSessionStatus() {
+            fetch('/api/session/status')
+                .then(response => response.json())
+                .then(data => {
+                    window.sessionData = data; // 存储会话数据到全局变量
+                    console.log('会话状态:', data);
+                    updateAdminButtonText(); // 更新按钮文本
+                })
+                .catch(error => {
+                    console.error('检查会话状态失败:', error);
+                    window.sessionData = { logged_in: false, username: '' };
+                    updateAdminButtonText(); // 更新按钮文本
+                });
+        }
+
+        // 设置智能链接
+        function setupSmartLinks() {
+            // 延迟执行，确保会话状态已检查完成
+            setTimeout(() => {
+                const adminLinks = document.querySelectorAll('a[href="/admin/login"]');
+                adminLinks.forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        handleAdminLinkClick();
+                    });
+                });
+                
+                // 定期检查会话状态（每5分钟）
+                setInterval(checkSessionStatus, 5 * 60 * 1000);
+            }, 500);
+        }
+
+        // 处理管理链接点击
+        function handleAdminLinkClick() {
+            if (window.sessionData && window.sessionData.logged_in) {
+                // 已登录，直接跳转到管理页面
+                window.location.href = '/admin';
+            } else {
+                // 未登录，跳转到登录页面
+                window.location.href = '/admin/login';
+            }
+        }
+
+        // 更新配方管理按钮文本
+        function updateAdminButtonText() {
+            if (window.sessionData && window.sessionData.logged_in) {
+                // 已登录状态
+                document.getElementById('headerAdminText').textContent = '配方管理 (已登录)';
+                document.getElementById('batchAdminText').textContent = '配方管理 (已登录)';
+                
+                // 更新按钮样式
+                document.getElementById('headerAdminLink').className = 'btn btn-success btn-lg';
+                document.getElementById('batchAdminLink').className = 'btn btn-success';
+            } else {
+                // 未登录状态
+                document.getElementById('headerAdminText').textContent = '配方管理 (需要登录)';
+                document.getElementById('batchAdminText').textContent = '配方管理 (需要登录)';
+                
+                // 恢复按钮样式
+                document.getElementById('headerAdminLink').className = 'btn btn-outline-light btn-lg';
+                document.getElementById('batchAdminLink').className = 'btn btn-outline-primary';
+            }
         }
 
         // 加载产品类别选项
