@@ -284,7 +284,7 @@ def generate_bom():
         ws.cell(row=row, column=13, value=item['project_category'])  # 项目类别
         ws.cell(row=row, column=14, value=item['material_code'])  # 子项物料号
         ws.cell(row=row, column=15, value=item['material_name'])  # 子项物料描述
-        ws.cell(row=row, column=16, value=item['quantity'])  # 子项数量
+        ws.cell(row=row, column=16, value=item['quantity'] * data['basic_quantity'])  # 子项数量 = 配方数量 × 基本数量
         ws.cell(row=row, column=17, value=item['unit'])  # 子项单位
         row += 1
     
@@ -851,7 +851,7 @@ def batch_generate_bom_from_table():
                 ws_result.cell(row=row, column=13, value=item['project_category'])  # 项目类别
                 ws_result.cell(row=row, column=14, value=item['material_code'])  # 子项物料号
                 ws_result.cell(row=row, column=15, value=item['material_name'])  # 子项物料描述
-                ws_result.cell(row=row, column=16, value=item['quantity'])  # 子项数量
+                ws_result.cell(row=row, column=16, value=item['quantity'] * bom_item['basic_quantity'])  # 子项数量 = 配方数量 × 基本数量
                 ws_result.cell(row=row, column=17, value=item['unit'])  # 子项单位
                 
                 row += 1
