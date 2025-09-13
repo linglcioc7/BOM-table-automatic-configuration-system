@@ -35,32 +35,99 @@
             margin-top: 20px;
             border-left: 4px solid #667eea;
         }
-        .recipe-checkbox {
-            margin-bottom: 10px;
+        /* 配方筛选和选择样式 */
+        .recipe-filter-container {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
         }
-        .recipe-checkbox input[type="checkbox"] {
-            margin-right: 10px;
+        
+        .filter-controls {
+            background: white;
+            border-radius: 6px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .recipe-checkbox label {
-            font-weight: 500;
-            cursor: pointer;
+        
+        .selection-controls {
+            background: white;
+            border-radius: 6px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .recipe-selection-container {
-            background-color: #f8f9fa;
+        
+        .recipe-list-container {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
+        
         .recipe-list {
             min-height: 200px;
         }
+        
         .recipe-checkbox {
-            padding: 8px 12px;
-            border-bottom: 1px solid #dee2e6;
-            transition: background-color 0.2s;
+            margin-bottom: 8px;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            background-color: #ffffff;
+            transition: all 0.2s ease;
         }
+        
         .recipe-checkbox:hover {
-            background-color: #e9ecef;
+            background-color: #f8f9fa;
+            border-color: #007bff;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,123,255,0.15);
         }
-        .recipe-checkbox:last-child {
-            border-bottom: none;
+        
+        .recipe-checkbox .form-check-input {
+            margin-right: 12px;
+            transform: scale(1.1);
+        }
+        
+        .recipe-checkbox .form-check-input:checked {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+        
+        .recipe-checkbox .form-check-label {
+            cursor: pointer;
+            margin: 0;
+            font-weight: 500;
+            width: 100%;
+        }
+        
+        .recipe-checkbox .form-check-label:hover {
+            color: #007bff;
+        }
+        
+        .pagination-info {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 10px;
+        }
+        
+        .badge {
+            font-size: 0.75em;
+            padding: 0.35em 0.65em;
+        }
+        
+        /* 响应式优化 */
+        @media (max-width: 768px) {
+            .recipe-filter-container {
+                padding: 15px;
+            }
+            
+            .filter-controls, .selection-controls {
+                padding: 10px;
+            }
+            
+            .btn-group-sm .btn {
+                font-size: 0.75rem;
+                padding: 0.25rem 0.5rem;
+            }
         }
         .selected-recipes {
             background: #e8f5e8;
@@ -221,12 +288,9 @@
                                         <i class="bi bi-rulers"></i> 基本单位
                                     </label>
                                     <select class="form-control" id="basic_unit">
-                                        <option value="PCS">PCS</option>
+                                        <option value="EA">EA</option>
                                         <option value="KG">KG</option>
                                         <option value="M" selected>M</option>
-                                        <option value="L">L</option>
-                                        <option value="M2">M²</option>
-                                        <option value="M3">M³</option>
                                     </select>
                                 </div>
                             </div>
@@ -237,60 +301,110 @@
                                 <i class="bi bi-list-check"></i> 选择配方 * (可多选)
                             </label>
                             
-                            <!-- 搜索和筛选区域 -->
-                            <div class="row mb-3">
-                                <div class="col-md-8">
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="bi bi-search"></i></span>
-                                        <input type="text" class="form-control" id="recipeSearch" placeholder="输入配方名称或描述进行搜索...">
-                                        <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">清空</button>
+                            <!-- 配方筛选和选择区域 -->
+                            <div class="recipe-filter-container">
+                                <!-- 搜索和筛选控制栏 -->
+                                <div class="filter-controls mb-3">
+                                    <div class="row g-2">
+                                        <div class="col-md-6">
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                                <input type="text" class="form-control" id="recipeSearch" 
+                                                       placeholder="搜索配方名称或描述..." 
+                                                       title="输入关键词快速查找配方">
+                                                <button class="btn btn-outline-secondary" type="button" 
+                                                        onclick="clearSearch()" title="清空搜索">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <select class="form-select" id="categoryFilter" title="按产品类别筛选">
+                                                <option value="">所有产品类别</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <button class="btn btn-outline-warning w-100" type="button" 
+                                                    onclick="clearAllFilters()" title="清空所有筛选条件">
+                                                <i class="bi bi-arrow-clockwise"></i> 重置
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="input-group">
-                                        <select class="form-control" id="categoryFilter">
-                                            <option value="">所有产品类别</option>
-                                            <!-- 产品类别选项将动态加载 -->
-                                        </select>
-                                        <button class="btn btn-outline-secondary" type="button" onclick="clearAllFilters()" title="清空所有筛选">
-                                            <i class="bi bi-x-circle"></i>
-                                        </button>
+
+                                <!-- 配方选择控制栏 -->
+                                <div class="selection-controls mb-3">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-center">
+                                                <span class="badge bg-primary me-2">
+                                                    <i class="bi bi-check-circle"></i> 已选择: <span id="selectedCount">0</span> 个配方
+                                                </span>
+                                                <small class="text-muted">点击下方配方进行选择</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 text-end">
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <button class="btn btn-outline-primary" type="button" 
+                                                        onclick="selectAllVisible()" title="选择当前页显示的所有配方">
+                                                    <i class="bi bi-check-square"></i> 全选当前页
+                                                </button>
+                                                <button class="btn btn-outline-success" type="button" 
+                                                        onclick="selectAllFiltered()" title="选择所有筛选结果中的配方">
+                                                    <i class="bi bi-check-all"></i> 全选筛选结果
+                                                </button>
+                                                <button class="btn btn-outline-secondary" type="button" 
+                                                        onclick="clearAllSelection()" title="清空所有已选择的配方">
+                                                    <i class="bi bi-x-circle"></i> 清空选择
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <!-- 配方选择区域 -->
-                            <div class="recipe-selection-container border rounded p-3" style="max-height: 300px; overflow-y: auto;">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <small class="text-muted">已选择: <span id="selectedCount">0</span> 个配方</small>
-                                    <div>
-                                        <button class="btn btn-sm btn-outline-primary" onclick="selectAllVisible()">全选当前页</button>
-                                        <button class="btn btn-sm btn-outline-success" onclick="selectAllFiltered()">全选筛选结果</button>
-                                        <button class="btn btn-sm btn-outline-secondary" onclick="clearAllSelection()">清空选择</button>
+
+                                <!-- 配方列表容器 -->
+                                <div class="recipe-list-container border rounded p-3" style="max-height: 350px; overflow-y: auto;">
+                                    <!-- 分页信息 -->
+                                    <div class="pagination-info mb-3">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-6">
+                                                <small class="text-muted">
+                                                    显示 <span id="currentPageInfo">1-10</span> / 共 <span id="totalRecipes">0</span> 个配方
+                                                </small>
+                                            </div>
+                                            <div class="col-md-6 text-end">
+                                                <div class="btn-group btn-group-sm">
+                                                    <button class="btn btn-outline-secondary" type="button" 
+                                                            onclick="changePage(-1)" id="prevPage" title="上一页">
+                                                        <i class="bi bi-chevron-left"></i>
+                                                    </button>
+                                                    <span class="btn btn-outline-secondary disabled" id="pageInfo">第1页</span>
+                                                    <button class="btn btn-outline-secondary" type="button" 
+                                                            onclick="changePage(1)" id="nextPage" title="下一页">
+                                                        <i class="bi bi-chevron-right"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                                
-                                <!-- 分页控制 -->
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <small class="text-muted">
-                                        显示 <span id="currentPageInfo">1-10</span> / 共 <span id="totalRecipes">0</span> 个配方
-                                    </small>
-                                    <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-secondary" onclick="changePage(-1)" id="prevPage">上一页</button>
-                                        <span class="btn btn-outline-secondary disabled" id="pageInfo">第1页</span>
-                                        <button class="btn btn-outline-secondary" onclick="changePage(1)" id="nextPage">下一页</button>
+
+                                    <!-- 配方列表 -->
+                                    <div id="recipeCheckboxes" class="recipe-list">
+                                        <!-- 配方复选框将在这里动态生成 -->
                                     </div>
-                                </div>
-                                
-                                <!-- 配方列表 -->
-                                <div id="recipeCheckboxes" class="recipe-list">
-                                    <!-- 配方复选框将在这里动态生成 -->
-                                </div>
-                                
-                                <!-- 加载提示 -->
-                                <div id="loadingRecipes" class="text-center text-muted d-none">
-                                    <div class="spinner-border spinner-border-sm" role="status"></div>
-                                    <span class="ms-2">加载中...</span>
+
+                                    <!-- 加载提示 -->
+                                    <div id="loadingRecipes" class="text-center text-muted d-none">
+                                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                                        <span class="ms-2">加载中...</span>
+                                    </div>
+
+                                    <!-- 无数据提示 -->
+                                    <div id="noRecipesMessage" class="text-center text-muted py-4 d-none">
+                                        <i class="bi bi-inbox display-4"></i>
+                                        <p class="mt-2">没有找到匹配的配方</p>
+                                        <small>请尝试调整搜索条件或筛选条件</small>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -604,7 +718,7 @@
                 });
         }
 
-        // 过滤配方
+        // 过滤配方 - 优化版本
         function filterRecipes() {
             const searchTerm = document.getElementById('recipeSearch').value.trim();
             
@@ -635,8 +749,16 @@
             
             filteredRecipes = tempFiltered;
             currentPage = 1;
+            
+            // 更新界面
             renderRecipes();
             updatePagination();
+            
+            // 显示筛选结果统计
+            const totalFiltered = filteredRecipes.length;
+            if (searchTerm || categoryFilter) {
+                showAlert(`筛选完成，找到 ${totalFiltered} 个配方`, 'info');
+            }
         }
 
         // 清空搜索和筛选
@@ -652,6 +774,7 @@
             document.getElementById('recipeSearch').value = '';
             document.getElementById('categoryFilter').value = '';
             categoryFilter = '';
+            currentPage = 1; // 重置到第一页
             filterRecipes();
             showAlert('已清空所有筛选条件', 'info');
         }
@@ -676,9 +799,10 @@
                 });
         }
 
-        // 渲染配方列表
+        // 渲染配方列表 - 优化版本
         function renderRecipes() {
             const container = document.getElementById('recipeCheckboxes');
+            const noRecipesMessage = document.getElementById('noRecipesMessage');
             container.innerHTML = '';
             
             const startIndex = (currentPage - 1) * pageSize;
@@ -686,13 +810,21 @@
             const pageRecipes = filteredRecipes.slice(startIndex, endIndex);
             
             if (pageRecipes.length === 0) {
-                container.innerHTML = '<div class="text-center text-muted py-3">没有找到匹配的配方</div>';
+                // 显示无数据提示
+                if (noRecipesMessage) {
+                    noRecipesMessage.classList.remove('d-none');
+                }
                 return;
+            }
+            
+            // 隐藏无数据提示
+            if (noRecipesMessage) {
+                noRecipesMessage.classList.add('d-none');
             }
             
             pageRecipes.forEach(recipe => {
                 const div = document.createElement('div');
-                div.className = 'recipe-checkbox';
+                div.className = 'recipe-checkbox mb-2 p-2 border rounded';
                 const isChecked = selectedRecipes.has(recipe.id);
                 
                 // 构建产品类别标签
@@ -700,13 +832,25 @@
                     `<span class="badge bg-info ms-2">${recipe.product_category}</span>` : 
                     '<span class="badge bg-secondary ms-2">未分类</span>';
                 
+                // 构建选择状态样式
+                const checkboxClass = isChecked ? 'form-check-input border-success' : 'form-check-input';
+                const labelClass = isChecked ? 'text-success fw-bold' : '';
+                
                 div.innerHTML = `
-                    <input type="checkbox" id="recipe_${recipe.id}" value="${recipe.id}" 
-                           onchange="toggleRecipe(${recipe.id}, '${recipe.name}')" ${isChecked ? 'checked' : ''}>
-                    <label for="recipe_${recipe.id}">
-                        <strong>${recipe.name}</strong> - ${recipe.description || '无描述'}
-                        ${categoryBadge}
-                    </label>
+                    <div class="form-check">
+                        <input class="${checkboxClass}" type="checkbox" id="recipe_${recipe.id}" 
+                               value="${recipe.id}" onchange="toggleRecipe(${recipe.id}, '${recipe.name}')" 
+                               ${isChecked ? 'checked' : ''}>
+                        <label class="form-check-label ${labelClass}" for="recipe_${recipe.id}">
+                            <div class="d-flex align-items-center">
+                                <span class="fw-bold me-2">${recipe.name}</span>
+                                ${categoryBadge}
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                ${recipe.description || '无描述'}
+                            </small>
+                        </label>
+                    </div>
                 `;
                 container.appendChild(div);
             });
@@ -739,46 +883,52 @@
             }
         }
 
-        // 全选当前页
+        // 全选当前页 - 仅选择配方，不触发其他操作
         function selectAllVisible() {
             const startIndex = (currentPage - 1) * pageSize;
             const endIndex = startIndex + pageSize;
             const pageRecipes = filteredRecipes.slice(startIndex, endIndex);
             
+            // 仅添加配方ID到选择集合，不触发其他操作
             pageRecipes.forEach(recipe => {
                 if (!selectedRecipes.has(recipe.id)) {
                     selectedRecipes.add(recipe.id);
                 }
             });
             
+            // 更新界面显示
             renderRecipes();
-            updateSelectedRecipesInfo();
             updateSelectedCount();
+            
+            // 显示成功提示
+            const pageCount = pageRecipes.length;
+            showAlert(`已全选当前页的 ${pageCount} 个配方`, 'success');
         }
 
-        // 全选筛选结果
+        // 全选筛选结果 - 仅选择配方，不触发其他操作
         function selectAllFiltered() {
+            // 仅添加配方ID到选择集合，不触发其他操作
             filteredRecipes.forEach(recipe => {
                 if (!selectedRecipes.has(recipe.id)) {
                     selectedRecipes.add(recipe.id);
                 }
             });
             
+            // 更新界面显示
             renderRecipes();
-            updateSelectedRecipesInfo();
             updateSelectedCount();
             
-            // 显示提示信息
+            // 显示成功提示
             const totalFiltered = filteredRecipes.length;
             showAlert(`已全选筛选结果中的 ${totalFiltered} 个配方`, 'success');
         }
 
-        // 清空所有选择
+        // 清空所有选择 - 仅清空选择，不触发其他操作
         function clearAllSelection() {
             selectedRecipes.clear();
             renderRecipes();
-            updateSelectedRecipesInfo();
             updateSelectedCount();
+            showAlert('已清空所有选择的配方', 'info');
         }
 
         // 更新已选择数量
@@ -804,14 +954,13 @@
                 selectedRecipes.add(recipeId);
             }
             
-            updateSelectedRecipesInfo();
             updateSelectedCount();
         }
 
-        // 更新已选择配方的信息
+        // 更新已选择配方的信息 - 简化版本，不自动加载详情
         function updateSelectedRecipesInfo() {
             const container = document.getElementById('selectedRecipesInfo');
-            const detailsDiv = document.getElementById('selectedRecipesDetails');
+            const countDisplay = document.getElementById('selectedCountDisplay');
             
             if (selectedRecipes.size === 0) {
                 container.style.display = 'none';
@@ -819,35 +968,9 @@
             }
             
             container.style.display = 'block';
-            detailsDiv.innerHTML = '';
-            
-            selectedRecipes.forEach(recipeId => {
-                fetch(`/api/recipe/${recipeId}`)
-                    .then(response => response.json())
-                    .then(items => {
-                        const recipeDiv = document.createElement('div');
-                        recipeDiv.className = 'selected-recipe-item';
-                        
-                        let html = `<h6><i class="bi bi-list-check"></i> 配方ID: ${recipeId}</h6>`;
-                        html += '<div class="table-responsive"><table class="table table-sm">';
-                        html += '<thead><tr><th>行号</th><th>物料编码</th><th>物料名称</th><th>数量</th><th>单位</th></tr></thead><tbody>';
-                        
-                        items.forEach(item => {
-                            html += `<tr>
-                                <td>${item.line_number}</td>
-                                <td>${item.material_code}</td>
-                                <td>${item.material_name}</td>
-                                <td>${item.quantity}</td>
-                                <td>${item.unit}</td>
-                            </tr>`;
-                        });
-                        
-                        html += '</tbody></table></div>';
-                        recipeDiv.innerHTML = html;
-                        detailsDiv.appendChild(recipeDiv);
-                    })
-                    .catch(error => console.error('加载配方详情失败:', error));
-            });
+            if (countDisplay) {
+                countDisplay.textContent = selectedRecipes.size;
+            }
         }
 
         // 表单提交处理
@@ -889,11 +1012,16 @@
                     // 显示成功消息
                     showAlert(`BOM表生成成功！已选择 ${selectedRecipes.size} 个配方`, 'success');
                     
-                    // 重置表单
+                    // 重置表单和清除筛选条件
                     document.getElementById('bomForm').reset();
                     selectedRecipes.clear();
-                    updateSelectedRecipesInfo();
                     updateSelectedCount();
+                    
+                    // 清除所有筛选条件，方便下次生成其他物料的BOM表
+                    clearAllFilters();
+                    
+                    // 重新加载配方列表
+                    loadRecipes();
                 } else {
                     showAlert('生成失败：' + data.message, 'danger');
                 }
@@ -1266,6 +1394,9 @@
                     
                     // 显示成功消息
                     showAlert(`批量BOM表生成成功！共生成 ${data.bom_count} 个BOM表`, 'success');
+                    
+                    // 清空表格数据，方便下次使用
+                    clearTable();
                 } else {
                     let errorMessage = data.message;
                     if (data.errors && data.errors.length > 0) {

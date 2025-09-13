@@ -338,12 +338,9 @@
                                         <div class="col-md-2">
                                             <label class="form-label">单位</label>
                                             <select class="form-control recipe-unit">
-                                                <option value="PCS">PCS</option>
+                                                <option value="EA">EA</option>
                                                 <option value="KG">KG</option>
                                                 <option value="M">M</option>
-                                                <option value="L">L</option>
-                                                <option value="M2">M²</option>
-                                                <option value="M3">M³</option>
                                             </select>
                                         </div>
                                         <div class="col-md-1">
@@ -535,12 +532,9 @@
                     <div class="col-md-2">
                         <label class="form-label">单位</label>
                         <select class="form-control recipe-unit">
+                            <option value="EA" ${itemData && itemData.unit === 'EA' ? 'selected' : ''}>EA</option>
                             <option value="KG" ${itemData && itemData.unit === 'KG' ? 'selected' : ''}>KG</option>
-                            <option value="PCS" ${itemData && itemData.unit === 'PCS' ? 'selected' : ''}>PCS</option>
                             <option value="M" ${itemData && itemData.unit === 'M' ? 'selected' : ''}>M</option>
-                            <option value="L" ${itemData && itemData.unit === 'L' ? 'selected' : ''}>L</option>
-                            <option value="M2" ${itemData && itemData.unit === 'M2' ? 'selected' : ''}>M²</option>
-                            <option value="M3" ${itemData && itemData.unit === 'M3' ? 'selected' : ''}>M³</option>
                         </select>
                     </div>
                     <div class="col-md-1">
@@ -1092,16 +1086,34 @@
             fetch(`/api/recipe/${recipeId}`)
                 .then(response => response.json())
                 .then(items => {
-                    let html = '<div class="table-responsive"><table class="table table-sm">';
+                    // 计算单位为KG的子物料数量之和（米重）
+                    let totalWeight = 0;
+                    items.forEach(item => {
+                        if (item.unit && item.unit.toUpperCase() === 'KG') {
+                            totalWeight += parseFloat(item.quantity) || 0;
+                        }
+                    });
+                    
+                    let html = '<div class="table-responsive">';
+                    
+                    // 添加米重信息
+                    html += `<div class="alert alert-info mb-3">
+                        <h6 class="mb-0"><i class="bi bi-info-circle"></i> 配方米重：<strong>${totalWeight.toFixed(4)} KG</strong></h6>
+                        <small class="text-muted">（所有单位为KG的子物料数量之和）</small>
+                    </div>`;
+                    
+                    html += '<table class="table table-sm">';
                     html += '<thead><tr><th>行号</th><th>物料编码</th><th>物料名称</th><th>数量</th><th>单位</th><th>类别</th></tr></thead><tbody>';
                     
                     items.forEach(item => {
-                        html += `<tr>
+                        // 为KG单位的行添加特殊样式
+                        const rowClass = item.unit && item.unit.toUpperCase() === 'KG' ? 'table-warning' : '';
+                        html += `<tr class="${rowClass}">
                             <td>${item.line_number}</td>
                             <td>${item.material_code}</td>
                             <td>${item.material_name}</td>
                             <td>${item.quantity}</td>
-                            <td>${item.unit}</td>
+                            <td><span class="badge ${item.unit && item.unit.toUpperCase() === 'KG' ? 'bg-warning' : 'bg-secondary'}">${item.unit}</span></td>
                             <td>${item.project_category}</td>
                         </tr>`;
                     });

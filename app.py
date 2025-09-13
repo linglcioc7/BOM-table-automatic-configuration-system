@@ -257,8 +257,8 @@ def generate_bom():
     # 按配方名称排序
     all_items.sort(key=lambda x: x['recipe_name'])
     
-    # 数据行
-    row = 2
+    # 数据行 - 从第8行开始填写数据（第2-7行为空白）
+    row = 8
     current_recipe = None
     bom_counter = 0
     
@@ -271,7 +271,7 @@ def generate_bom():
         # 每行都填写完整的数据
         ws.cell(row=row, column=1, value='')  # 字段名称
         ws.cell(row=row, column=2, value='P060')  # 工厂
-        ws.cell(row=row, column=3, value=item['recipe_description'])  # BOM可选文本
+        ws.cell(row=row, column=3, value=item['recipe_name'])  # BOM可选文本
         ws.cell(row=row, column=4, value=data['parent_material_code'])  # 父项物料号
         ws.cell(row=row, column=5, value=data['parent_material_name'])  # 物料名称
         ws.cell(row=row, column=6, value='')  # 生效日期
@@ -284,7 +284,12 @@ def generate_bom():
         ws.cell(row=row, column=13, value=item['project_category'])  # 项目类别
         ws.cell(row=row, column=14, value=item['material_code'])  # 子项物料号
         ws.cell(row=row, column=15, value=item['material_name'])  # 子项物料描述
-        ws.cell(row=row, column=16, value=item['quantity'] * data['basic_quantity'])  # 子项数量 = 配方数量 × 基本数量
+        # 子项数量计算：只有KG和M单位才乘以基本数量，EA单位保持原数量
+        if item['unit'] in ['KG', 'M']:
+            calculated_quantity = item['quantity'] * data['basic_quantity']
+        else:
+            calculated_quantity = item['quantity']
+        ws.cell(row=row, column=16, value=calculated_quantity)  # 子项数量
         ws.cell(row=row, column=17, value=item['unit'])  # 子项单位
         row += 1
     
@@ -648,8 +653,8 @@ def export_all_recipes():
             cell.font = Font(bold=True)
             cell.alignment = Alignment(horizontal='center', vertical='center')
         
-        # 数据行
-        row = 2
+        # 数据行 - 从第8行开始填写数据（第2-7行为空白）
+        row = 8
         for recipe in recipes:
             # 获取配方项
             items = RecipeItem.query.filter_by(recipe_id=recipe.id).order_by(RecipeItem.line_number).all()
@@ -796,8 +801,8 @@ def batch_generate_bom_from_table():
             cell.font = Font(bold=True)
             cell.alignment = Alignment(horizontal='center', vertical='center')
         
-        # 数据行
-        row = 2
+        # 数据行 - 从第8行开始填写数据（第2-7行为空白）
+        row = 8
         
         for bom_item in bom_items:
             # 为每个父物料重新开始计数
@@ -838,7 +843,7 @@ def batch_generate_bom_from_table():
                 # 每行都填写完整的数据
                 ws_result.cell(row=row, column=1, value='')  # 字段名称
                 ws_result.cell(row=row, column=2, value='P060')  # 工厂
-                ws_result.cell(row=row, column=3, value=item['recipe_description'])  # BOM可选文本
+                ws_result.cell(row=row, column=3, value=item['recipe_name'])  # BOM可选文本
                 ws_result.cell(row=row, column=4, value=bom_item['parent_material_code'])  # 父项物料号
                 ws_result.cell(row=row, column=5, value=bom_item['parent_material_name'])  # 物料名称
                 ws_result.cell(row=row, column=6, value='')  # 生效日期
@@ -851,7 +856,12 @@ def batch_generate_bom_from_table():
                 ws_result.cell(row=row, column=13, value=item['project_category'])  # 项目类别
                 ws_result.cell(row=row, column=14, value=item['material_code'])  # 子项物料号
                 ws_result.cell(row=row, column=15, value=item['material_name'])  # 子项物料描述
-                ws_result.cell(row=row, column=16, value=item['quantity'] * bom_item['basic_quantity'])  # 子项数量 = 配方数量 × 基本数量
+                # 子项数量计算：只有KG和M单位才乘以基本数量，EA单位保持原数量
+                if item['unit'] in ['KG', 'M']:
+                    calculated_quantity = item['quantity'] * bom_item['basic_quantity']
+                else:
+                    calculated_quantity = item['quantity']
+                ws_result.cell(row=row, column=16, value=calculated_quantity)  # 子项数量
                 ws_result.cell(row=row, column=17, value=item['unit'])  # 子项单位
                 
                 row += 1
